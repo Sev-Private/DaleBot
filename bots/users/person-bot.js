@@ -15,6 +15,11 @@ class PersonBot extends Bot {
     }
   }
 
+  // TODO
+  addPhrase () {
+
+  }
+
   handleMessage (message, args) {
     this.getTableData(message, args)
   }
@@ -24,7 +29,7 @@ class PersonBot extends Bot {
 
     const that = this
     super.setNickname(message, that.name)
-      .then(user => {
+      .then(() => {
         super.sendTextMessage(message,
           newMessage,
           that.formatOptions(args))
