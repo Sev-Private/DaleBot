@@ -1,26 +1,28 @@
 # Spreadsheet Processing Results
 
-## Main File
+## Suggestion and Participation Metrics
 
-First cell: Filme
+### Most and Least Suggestions
 
-## Participant Files
+Suggestions per person:
+- Sev: 2 suggestions
+- João: 3 suggestions
+- Victor: 6 suggestions
+- Baby: 3 suggestions
+- Sand: 3 suggestions
 
-Participant: Sand
-First cell: Filme
+**Most Suggestions**: ['Victor']
+**Least Suggestions**: ['Sev']
 
-Participant: Sev
-First cell: Filme
+### Most and Least Participation
 
-Participant: Baby
-First cell: Filme
+Participation per person:
+- Sev: 10 movies watched
+- João: 16 movies watched
+- Victor: 16 movies watched
+- Baby: 16 movies watched
+- Sand: 13 movies watched
 
-Participant: Victor
-First cell: Filme
-
-Participant: João
-First cell: Filme
-
-Participant: Átila
-First cell: Filme
+**Most Participation**: ['João', 'Victor', 'Baby']
+**Least Participation**: ['Sev']
 
