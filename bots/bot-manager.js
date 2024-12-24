@@ -76,4 +76,4 @@ class BotManager {
 
 module.exports = BotManager
 
-// Github add {cmd} {frase}
+// TODO: Github add {cmd} {frase}
