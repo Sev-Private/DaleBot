@@ -69,7 +69,6 @@ def calculate_suggestion_metrics(filtered_main_sheet):
 
     return suggestion_counts, most_suggested, least_suggested
 
-
 # Function to calculate the most and least participation
 def calculate_participation_metrics(filtered_participant_sheets):
     participation_counts = empty_counter()
@@ -102,6 +101,29 @@ def calculate_participation_metrics(filtered_participant_sheets):
     least_participated = [person for person, count in participation_counts.items() if count == least_participated_count]
 
     return participation_counts, most_participated, least_participated
+
+# Function to calculate the average rating given by each person
+def calculate_average_ratings(filtered_participant_sheets):
+    average_ratings = {}
+    
+    for participant in filtered_participant_sheets:
+        participant_name = participant["name"]
+        participant_csv = participant["csv"]
+        rows = participant_csv.split("\n")
+        
+        total_ratings = 0
+        rating_count = 0
+        
+        for row in rows[1:]:  # Skip header
+            columns = row.split(";")
+            if len(columns) > 1 and columns[1].strip():  # Check if there is a rating (non-blank)
+                total_ratings += int(columns[1].strip())
+                rating_count += 1
+        
+        if rating_count > 0:
+            average_ratings[participant_name] = total_ratings / rating_count
+    
+    return average_ratings
 
 # Main function to preprocess and write details to the output file
 def main():
@@ -168,6 +190,7 @@ def main():
     # Define the string which will be added to the final output
     formatted_file = "# Spreadsheet Processing Results\n\n"
 
+    # Section for Suggestion and Participation
     formatted_file += "## Suggestion and Participation Metrics\n\n"
     
     # Suggestion Metrics
@@ -187,6 +210,16 @@ def main():
         formatted_file += f"- {person}: {count} movies watched\n"
     formatted_file += f"\n**Most Participation**: {most_participated}\n"
     formatted_file += f"**Least Participation**: {least_participated}\n\n"
+
+    # Section for Voting Patterns and Preferences
+    formatted_file += "## Voting Patterns and Preferences\n\n"
+
+    # Average Rating Metrics
+    formatted_file += "### Average Rating Given by Each Person\n\n"
+    
+    average_ratings = calculate_average_ratings(participant_sheets)
+    for person, avg_rating in average_ratings.items():
+        formatted_file += f"- {person}: {avg_rating:.2f} average rating\n"
 
     # Define the output file name with the year
     output_file = f"analysis_results_{year}.md"
