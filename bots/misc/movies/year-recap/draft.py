@@ -22,6 +22,41 @@ most_suggested, least_suggested = most_and_least_suggestions(main_df)
 print(f"Most Suggestions: {most_suggested}")
 print(f"Least Suggestions: {least_suggested}")
 
+
+def calculate_suggestion_metrics(filtered_main_sheet):
+    suggestion_counts = empty_counter(0)
+    suggestion_movies = empty_counter([])
+    # Iterate over the filtered rows in the main sheet
+    for row in filtered_main_sheet:
+        suggester = row[3]  # Assuming "suggested by" is the 4th column (index 3)
+        movie = row[0]  # Movie name is in the 1st column (index 0)
+
+        # Count suggestions for each suggester and track movies they suggested
+        if suggester == "Thiago Augusto":
+            suggestion_counts["Sev"] += 1
+            suggestion_movies["Sev"].append(movie)
+        elif suggester == "joaovictorcosta1997@gmail.com":
+            suggestion_counts["João"] += 1
+            suggestion_movies["João"].append(movie)
+        elif suggester == "Victor Eduardo":
+            suggestion_counts["Victor"] += 1
+            suggestion_movies["Victor"].append(movie)
+        elif suggester == "Gustavo Paes":
+            suggestion_counts["Baby"] += 1
+            suggestion_movies["Baby"].append(movie)
+        elif suggester == "sand.dejesus@gmail.com":
+            suggestion_counts["Sand"] += 1
+            suggestion_movies["Sand"].append(movie)
+
+    # Find most and least suggestions
+    most_suggested_count = max(suggestion_counts.values())
+    least_suggested_count = min(suggestion_counts.values())
+
+    most_suggested = [person for person, count in suggestion_counts.items() if count == most_suggested_count]
+    least_suggested = [person for person, count in suggestion_counts.items() if count == least_suggested_count]
+
+    return suggestion_counts, most_suggested, least_suggested, suggestion_movies
+
 # 2. Most and Least Participation  
 # Count how many movies each person has voted on to determine who has participated in rating the most and least movies.
 
@@ -42,6 +77,41 @@ most_participated, least_participated = most_and_least_participation(user_dfs)
 print(f"Most Participation: {most_participated}")
 print(f"Least Participation: {least_participated}")
 
+
+# Function to calculate the most and least participation
+def calculate_participation_metrics(filtered_participant_sheets):
+    participation_counts = empty_counter(0)
+
+    # Iterate through each participant's filtered sheet and count non-blank ratings
+    for participant in filtered_participant_sheets:
+        participant_csv = participant["csv"]
+        rows = participant_csv.split("\n")
+        
+        # Assuming movie names are in the first column, ratings are in the second column (index 1)
+        for row in rows[1:]:  # Skip header
+            columns = row.split(";")
+            if len(columns) > 1 and columns[1].strip():  # Check if there is a rating (non-blank)
+                if participant["name"] == "Sev":
+                    participation_counts["Sev"] += 1
+                elif participant["name"] == "João":
+                    participation_counts["João"] += 1
+                elif participant["name"] == "Victor":
+                    participation_counts["Victor"] += 1
+                elif participant["name"] == "Baby":
+                    participation_counts["Baby"] += 1
+                elif participant["name"] == "Sand":
+                    participation_counts["Sand"] += 1
+
+    # Find most and least participation
+    most_participated_count = max(participation_counts.values())
+    least_participated_count = min(participation_counts.values())
+
+    most_participated = [person for person, count in participation_counts.items() if count == most_participated_count]
+    least_participated = [person for person, count in participation_counts.items() if count == least_participated_count]
+
+    return participation_counts, most_participated, least_participated
+
+
 # 3. Average Rating Given by Each Person  
 # Calculate the average rating each person gives to see who tends to rate movies higher or lower on average.
 
@@ -58,6 +128,32 @@ avg_ratings = average_rating_given(user_dfs)
 print("Average Rating Given by Each Person:")
 for person, avg_rating in avg_ratings.items():
     print(f"{person}: {avg_rating:.2f}")
+
+# Function to calculate the average rating for each person's suggested movies
+def calculate_average_rating_for_suggested_movies(filtered_participant_sheets, suggestion_movies):
+    average_ratings_for_suggested = {}
+    
+    for person, movies in suggestion_movies.items():
+        total_ratings = 0
+        rating_count = 0
+        
+        # Find ratings for each suggested movie by the given person
+        for movie in movies:
+            for participant in filtered_participant_sheets:
+                participant_csv = participant["csv"]
+                rows = participant_csv.split("\n")
+                for row in rows[1:]:  # Skip header
+                    columns = row.split(";")
+                    if len(columns) > 1 and columns[0] == movie and columns[1].strip():  # If rating is non-blank
+                        total_ratings += int(columns[1].strip())
+                        rating_count += 1
+        
+        if rating_count > 0:
+            average_ratings_for_suggested[person] = total_ratings / rating_count
+        else:
+            average_ratings_for_suggested[person] = 0  # No ratings for suggested movies
+    
+    return average_ratings_for_suggested
 
 # 4. Average Rating for Each Person's Suggested Movies  
 # Find out how well each person's suggested movies are received on average.
@@ -87,6 +183,32 @@ for suggester, avg_rating in avg_ratings_for_suggested.items():
     print(f"{suggester}: {avg_rating:.2f}")
 
 
+# Function to calculate the average rating given by each person
+def calculate_average_ratings(filtered_participant_sheets):
+    average_ratings = {}
+    
+    for participant in filtered_participant_sheets:
+        participant_name = participant["name"]
+        participant_csv = participant["csv"]
+        rows = participant_csv.split("\n")
+        
+        total_ratings = 0
+        rating_count = 0
+        
+        for row in rows[1:]:  # Skip header
+            columns = row.split(";")
+            if len(columns) > 1 and columns[1].strip():  # Check if there is a rating (non-blank)
+                total_ratings += int(columns[1].strip())
+                rating_count += 1
+        
+        if rating_count > 0:
+            average_ratings[participant_name] = total_ratings / rating_count
+    
+    return average_ratings
+
+
+
+
 # 5. Most Generous and Most Critical Viewers  
 # Identify who has the highest and lowest average votes when rating others' suggestions.
 
@@ -107,6 +229,97 @@ most_generous, most_critical = most_generous_and_most_critical(user_dfs)
 print(f"Most Generous Viewer: {most_generous}")
 print(f"Most Critical Viewer: {most_critical}")
 
+
+# Function to calculate the average rating given to movies suggested by others
+# and return most generous and most critical viewers
+def calculate_average_rating_given_to_suggested_movies(filtered_participant_sheets, suggestion_movies):
+    generosity = {}
+    criticality = {}
+    
+    for person, suggested_movies in suggestion_movies.items():
+        total_ratings = 0
+        rating_count = 0
+        total_ratings_critical = 0
+        rating_count_critical = 0
+        
+        # Iterate through each participant's ratings
+        for participant in filtered_participant_sheets:
+            participant_name = participant["name"]
+            participant_csv = participant["csv"]
+            rows = participant_csv.split("\n")
+            
+            for row in rows[1:]:  # Skip header
+                columns = row.split(";")
+                if len(columns) > 1 and columns[0].strip():
+                    movie = columns[0].strip()
+                    rating = columns[1].strip()
+                    if rating:  # Only consider movies with ratings
+                        rating = int(rating)
+                        
+                        # Consider ratings for movies NOT suggested by this person (generosity)
+                        if movie not in suggested_movies:
+                            total_ratings += rating
+                            rating_count += 1
+                        # Consider ratings for movies that were suggested by the person (criticality)
+                        elif movie in suggested_movies:
+                            total_ratings_critical += rating
+                            rating_count_critical += 1
+        
+        # Calculate average generosity and criticality
+        if rating_count > 0:
+            generosity[person] = total_ratings / rating_count
+        else:
+            generosity[person] = 0
+        
+        if rating_count_critical > 0:
+            criticality[person] = total_ratings_critical / rating_count_critical
+        else:
+            criticality[person] = 0
+    
+    # Determine the most generous and most critical viewers
+    most_generous_viewer = max(generosity, key=generosity.get)  # Highest generosity = most generous
+    most_critical_viewer = min(criticality, key=criticality.get)  # Highest criticality = most critical
+    
+    return generosity, criticality, most_generous_viewer, most_critical_viewer
+
+
+def calculate_biased_ratings(filtered_participant_sheets, suggestion_movies):
+    biased_ratings = {}
+    
+    for person, suggested_movies in suggestion_movies.items():
+        total_ratings = 0
+        rating_count = 0
+        
+        # Iterate through each participant's ratings
+        for participant in filtered_participant_sheets:
+            participant_name = participant["name"]
+            participant_csv = participant["csv"]
+            rows = participant_csv.split("\n")
+            
+            for row in rows[1:]:  # Skip header
+                columns = row.split(";")
+                if len(columns) > 1 and columns[0].strip():
+                    movie = columns[0].strip()
+                    rating = columns[1].strip()
+                    if rating:  # Only consider movies with ratings
+                        rating = int(rating)
+                        
+                        # Only consider ratings for movies that the person suggested
+                        if movie in suggested_movies and participant_name == person:
+                            total_ratings += rating
+                            rating_count += 1
+        
+        # Calculate average rating for own movies
+        if rating_count > 0:
+            biased_ratings[person] = total_ratings / rating_count
+        else:
+            biased_ratings[person] = 0
+    
+    # Determine the most and least biased viewers
+    most_biased_viewer = max(biased_ratings, key=biased_ratings.get)  # Highest biased rating = most biased
+    least_biased_viewer = min(biased_ratings, key=biased_ratings.get)  # Lowest biased rating = least biased
+    
+    return biased_ratings, most_biased_viewer, least_biased_viewer
 
 # 6. Highest and Lowest Rated Movies  
 # Identify the movie with the highest and lowest average scores, and track who suggested them.
