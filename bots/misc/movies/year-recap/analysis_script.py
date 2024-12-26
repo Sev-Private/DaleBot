@@ -9,10 +9,23 @@ import argparse
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
+import pprint
 
 # Define constants for the Google Sheets URL and credentials file
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1jnZHVMXvRCZFQDtwj-KazYPjniA-Vit8Rl0Z_sHHpRc/"  # Replace with your Google Sheets URL
 CREDENTIALS_JSON = "my_credentials.json"  # Replace with the path to your credentials JSON file
+
+def initialize_config_and_return_arguments():
+     # This works in systems where Portuguese locale is available
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8') 
+    locale.setlocale(locale.LC_NUMERIC, 'pt_BR.UTF-8')
+    
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Process spreadsheet and extract data.")
+    parser.add_argument('year', type=int, help="The year for which to run the analysis")
+    args = parser.parse_args()
+    
+    return args.year
 
 # Function to authenticate and get the Google Sheets client
 def authenticate_google_sheets(credentials_json):
@@ -31,30 +44,39 @@ def export_to_csv(worksheet):
     csv_data = "\n".join([";".join(row) for row in rows])
     return csv_data
 
-# def empty_counter(value):
-#     # Check if the value is mutable (e.g., list, dict)
-#     if isinstance(value, (list, dict, set)):  
-#         # If it's mutable, create a new copy for each person
-#         return {
-#             "Sev": value.copy(),
-#             "João": value.copy(),
-#             "Victor": value.copy(),
-#             "Baby": value.copy(),
-#             "Sand": value.copy(),
-#         }
-#     else:
-#         # If it's not mutable, just assign the value as is (e.g., 0)
-#         return {
-#             "Sev": value,
-#             "João": value,
-#             "Victor": value,
-#             "Baby": value,
-#             "Sand": value,
-#         }
+def format_print(data):
+    pp = pprint.PrettyPrinter(indent=4, width=100)
+    pp.pprint(data)
 
 # Get the directory of the current script
 def define_script_dir():
     return os.path.dirname(os.path.abspath(__file__))
+
+def set_participant_aliases(suggester):
+    # Map suggester to sheet_title
+    suggester_map = {
+        "Thiago Augusto": "Sev",
+        "joaovictorcosta1997@gmail.com": "João",
+        "Victor Eduardo": "Victor",
+        "Gustavo Paes": "Baby",
+        "sand.dejesus@gmail.com": "Sand"
+    }
+
+    if suggester in suggester_map:
+        return suggester_map[suggester]
+    return ""
+
+def write_to_output_file(year, script_dir, content):
+    # Define the output file name with the year
+    output_file = f"analysis_results_{year}.md"
+
+    # Write details to the output file
+    output_path = os.path.join(script_dir, output_file)
+    with open(output_path, "w") as file:
+        # Write final details in the file
+        file.write(content)
+    
+    return output_path
 
 def preprocess_spreadsheet(year, script_dir):
     credentials_json = os.path.join(script_dir, CREDENTIALS_JSON)
@@ -69,123 +91,114 @@ def preprocess_spreadsheet(year, script_dir):
     main_sheet = spreadsheet.get_worksheet(0)
     main_csv = export_to_csv(main_sheet)
     rows = main_csv.split("\n")
-    
-    # Filter the movies by the given year
+
+    # Filter the movies by the given year and add to filtered main list
     filtered_movies = []
-    for row in rows[1:]:  # Skipping the header
-        columns = row.split(";")
-        if len(columns) > 2:  # Ensure there is a date column
-            try:
-                date_watched = datetime.strptime(columns[2], "%d/%b./%Y")  # Assuming date format is YYYY-MM-DD
-                if date_watched.year == year:
-                    filtered_movies.append(columns[0])  # Add movie name to the filtered list
-            except ValueError:
-                continue  # Skip if the date is invalid or in the wrong format
-    # Filter the main sheet to only include the filtered movies
     filtered_main_sheet = []
     for row in rows[1:]:  # Skipping the header
         columns = row.split(";")
-        if len(columns) > 0 and columns[0] in filtered_movies:
-            filtered_main_sheet.append(columns)
+        if columns[0] == '':
+            break
+        if len(columns) > 2:  # Ensure there is a date column
+            try:
+                date_watched = datetime.strptime(columns[2], "%d/%b./%Y")
+                if date_watched.year == year:
+                    filtered_movies.append(columns[0])  # Add movie name to the filtered list
+                    filtered_main_sheet.append({
+                        "name": columns[0],
+                        "imdb-link": columns[1],
+                        "suggester": set_participant_aliases(columns[3]),
+                        "average-rating": locale.atof(columns[4]),
+                    }) # Add movie name to the main sheet file
+            except ValueError:
+                continue  # Skip if the date is invalid or in the wrong format
     
-    # Extract participant sheets
+    # Extract participant sheets with filter
     participant_sheets = {}
-    for sheet in spreadsheet.worksheets()[1:]:
+    for sheet in spreadsheet.worksheets()[1:]: # Ignore main sheet
         participant_csv = export_to_csv(sheet)
         participant_name = sheet.title
-        # Filter participant ratings based on the filtered movie list
-        filtered_participant_ratings = []
         rows = participant_csv.split("\n")
+        filtered_rows = []
         for row in rows[1:]:  # Skipping the header
             columns = row.split(";")
             if len(columns) > 1 and columns[0] in filtered_movies:  # Only consider ratings for filtered movies
-                filtered_participant_ratings.append(row)
+                filtered_rows.append({
+                    "name": columns[0],
+                    "rating": int(columns[1]) if len(columns) > 1 and columns[1].isdigit() else None
+                })
 
         participant_sheets[participant_name] = {
-            "names": set_participant_aliases(participant_name),
-            "csv": "\n".join(filtered_participant_ratings),
+            'csv': filtered_rows,
+            'suggestion-count': 0,
+            'participation-count': 0,
+            'all-average-rating': 0
         }
-    
     return filtered_main_sheet, participant_sheets
 
-def set_participant_aliases(sheet_title):
-    # Map sheet title to suggester
-    suggester_map = {
-        "Sev": "Thiago Augusto",
-        "João": "joaovictorcosta1997@gmail.com",
-        "Victor": "Victor Eduardo",
-        "Baby": "Gustavo Paes",
-        "Sand": "sand.dejesus@gmail.com"
-    }
+def process_data(main_sheet, participant_sheets):
+    for movie_row in main_sheet:
+        participant_sheets[movie_row['suggester']]['suggestion-count'] += 1
 
-    if sheet_title in suggester_map:
-        suggester = suggester_map[sheet_title]
-        return [sheet_title, suggester]
-    return []
-    
-def initialize_config_and_return_arguments()
-     # This works in systems where Portuguese locale is available
-    locale.setlocale(locale.LC_TIME, 'pt_PT.UTF-8') 
-    
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Process spreadsheet and extract data.")
-    parser.add_argument('year', type=int, help="The year for which to run the analysis")
-    args = parser.parse_args()
-    
-    return args.year
+    for participant, data in participant_sheets.items():
+        for participant_row in data['csv']:
+            participant_rating = participant_row['rating']
+            if participant_rating is not None:
+                participant_sheets[participant]['participation-count'] += 1
+                participant_sheets[participant]['all-average-rating'] += participant_rating
+        participant_sheets[participant]['all-average-rating'] /= participant_sheets[participant]['participation-count']
 
-def format_ouput_content():
-    return "this is a new test"
 
-def write_to_output_file(year, script_dir, content):
-    # Define the output file name with the year
-    output_file = f"analysis_results_{year}.md"
+    return main_sheet, participant_sheets
 
-    # Write details to the output file
-    output_path = os.path.join(script_dir, output_file)
-    with open(output_path, "w") as file:
-        # Write final details in the file
-        file.write(content)
+def format_ouput_content(participant_sheets):
+    output = "# Cinéfilos Processing Results\n\n"
 
+    # Section for Suggestion and Participation
+    output += "## Suggestion and Participation Metrics\n\n"
+
+    # Suggestion Metrics
+    output += "### Most and Least Suggestions\n\n"
+    output += "**Suggestions per person:**"
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['suggestion-count'])
+    # Print each user with their suggestion count
+    for person, data in sorted_items:
+        output += f"- {person}: {data['suggestion-count']} suggestions\n"
+
+    # Participation Metrics
+    output += "\n### Most and Least Participation\n\n"
+    output += "**Participation per person:**\n"
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['participation-count'])
+    for person, data in sorted_items:
+        output += f"- {person}: {data['participation-count']} participation\n"
+
+    #  Section for Voting Patterns and Preferences
+    output += "\n## Voting Patterns and Preferences\n\n"
+
+    # Average Rating Metrics
+    output += "### Average Rating Given by Each Person for all movies they've watched\n\n"
+    output += "**Rating per person:**\n"
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['all-average-rating'])
+    for person, data in sorted_items:
+        output += f"- {person}: {data['all-average-rating']:.2f} average rating\n"
+
+    return output
 
 # Main function to preprocess and write details to the output file
 def main():    
     year = initialize_config_and_return_arguments()
 
     script_dir = define_script_dir()
-    main_sheet, participants_sheet = preprocess_spreadsheet(year, script_dir)
+    main_sheet, participant_sheets = preprocess_spreadsheet(year, script_dir)
 
-    print(main_sheet)
+    processed_main, processed_participant = process_data(main_sheet, participant_sheets)
 
-    print(participant_sheets)
+    format_print(processed_main)
+    format_print(processed_participant)
 
-    content = format_ouput_content()
+    content = format_ouput_content(processed_participant)
 
-    write_to_output_file(year, script_dir, content)
-
-    # # Define the string which will be added to the final output
-    # formatted_file = "# Spreadsheet Processing Results\n\n"
-
-    # # Section for Suggestion and Participation
-    # formatted_file += "## Suggestion and Participation Metrics\n\n"
-    
-    # # Suggestion Metrics
-    # formatted_file += "### Most and Least Suggestions\n\n"
-    # formatted_file += "Suggestions per person:\n"
-    # suggestion_counts, most_suggested, least_suggested, suggestion_movies = calculate_suggestion_metrics(filtered_main_sheet)
-    # for person, count in suggestion_counts.items():
-    #     formatted_file += f"- {person}: {count} suggestions\n"
-    # formatted_file += f"\n**Most Suggestions**: {most_suggested}\n"
-    # formatted_file += f"**Least Suggestions**: {least_suggested}\n\n"
-    
-    # # Participation Metrics
-    # formatted_file += "### Most and Least Participation\n\n"
-    # formatted_file += "Participation per person:\n"
-    # participation_counts, most_participated, least_participated = calculate_participation_metrics(participant_sheets)
-    # for person, count in participation_counts.items():
-    #     formatted_file += f"- {person}: {count} movies watched\n"
-    # formatted_file += f"\n**Most Participation**: {most_participated}\n"
-    # formatted_file += f"**Least Participation**: {least_participated}\n\n"
+    output_path =  write_to_output_file(year, script_dir, content)
 
     # # Section for Voting Patterns and Preferences
     # formatted_file += "## Voting Patterns and Preferences\n\n"
