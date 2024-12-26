@@ -94,7 +94,7 @@ def preprocess_spreadsheet(year, script_dir):
 
     # Filter the movies by the given year and add to filtered main list
     filtered_movies = []
-    filtered_main_sheet = []
+    filtered_main_sheet = {}
     for row in rows[1:]:  # Skipping the header
         columns = row.split(";")
         if columns[0] == '':
@@ -104,12 +104,12 @@ def preprocess_spreadsheet(year, script_dir):
                 date_watched = datetime.strptime(columns[2], "%d/%b./%Y")
                 if date_watched.year == year:
                     filtered_movies.append(columns[0])  # Add movie name to the filtered list
-                    filtered_main_sheet.append({
+                    filtered_main_sheetcolumns[0] = {
                         "name": columns[0],
                         "imdb-link": columns[1],
                         "suggester": set_participant_aliases(columns[3]),
                         "average-rating": locale.atof(columns[4]),
-                    }) # Add movie name to the main sheet file
+                    } # Add movie name to the main sheet file
             except ValueError:
                 continue  # Skip if the date is invalid or in the wrong format
     
@@ -143,7 +143,7 @@ def preprocess_spreadsheet(year, script_dir):
 
 def process_data(main_sheet, participant_sheets):
     # Track suggestions and ratings
-    for movie_row in main_sheet:
+    for movie_std_devsindex, movie_row in main_sheet.items():
         suggester = movie_row['suggester']
         participant_sheets[suggester]['suggestion-count'] += 1
         participant_sheets[suggester]['received-average-count'] += 1
@@ -151,9 +151,9 @@ def process_data(main_sheet, participant_sheets):
         participant_sheets[suggester]['suggested-movies'].append(movie_row['name'])
 
     # Process ratings
-    for participant, data in participant_sheets.items():
+    for participant_index, participant_data in participant_sheets.items():
 
-        for participant_row in data['csv']:
+        for participant_row in participant_data['csv']:
             participant_rating = participant_row['rating']
 
             # Means participant watched given movie
@@ -169,15 +169,15 @@ def process_data(main_sheet, participant_sheets):
                 else:
                     participant_sheets[participant]['critical-average-rating'] += participant_rating
 
-        suggested_movies_count = len(data['suggested-movies'])
+        suggested_movies_count = len(participant_data['suggested-movies'])
 
-        if data['participation-count'] > 0:
-            participant_sheets[participant]['all-average-rating'] /= (data['participation-count'] - suggested_movies_count)
+        if participant_data['participation-count'] > 0:
+            participant_sheets[participant]['all-average-rating'] /= (participant_data['participation-count'] - suggested_movies_count)
 
-            participant_sheets[participant]['critical-average-rating'] /= data['participation-count']
+            participant_sheets[participant]['critical-average-rating'] /= participant_data['participation-count']
 
-        if data['received-average-count'] > 0:
-            participant_sheets[participant]['received-average-rating'] /= data['received-average-count']
+        if participant_data['received-average-count'] > 0:
+            participant_sheets[participant]['received-average-rating'] /= participant_data['received-average-count']
         
         if suggested_movies_count > 0:
             participant_sheets[participant]['bias-average-rating'] /= suggested_movies_count
@@ -243,7 +243,7 @@ def format_ouput_content(main_sheet, participant_sheets):
     # Highest and Lowest Rated Movies
     output += "\n### Highest and Lowest Rated Movies\n\n"
     output += "**Average rating of each movie in order:**\n"
-    sorted_items =  sorted(main_sheet, key=lambda x: x['average-rating'])
+    sorted_items =  sorted(main_sheet.items(), key=lambda x: x[1]['average-rating'])
     for index, movie_data in enumerate(sorted_items):
         output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with an average rating of {movie_data['average-rating']:.2f}"
 
