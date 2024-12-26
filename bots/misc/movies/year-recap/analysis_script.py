@@ -133,23 +133,43 @@ def preprocess_spreadsheet(year, script_dir):
             'suggestion-count': 0,
             'participation-count': 0,
             'all-average-rating': 0
+            'received-average-rating': 0
         }
     return filtered_main_sheet, participant_sheets
 
 def process_data(main_sheet, participant_sheets):
+    # Track suggestions and ratings
     for movie_row in main_sheet:
-        participant_sheets[movie_row['suggester']]['suggestion-count'] += 1
+        suggester = movie_row['suggester']
+        participant_sheets[suggester]['suggestion-count'] += 1
 
+    # Process ratings
     for participant, data in participant_sheets.items():
+        received_count = 0
+
         for participant_row in data['csv']:
             participant_rating = participant_row['rating']
+            movie_name = participant_row['name']
+
             if participant_rating is not None:
+                # Calculate individual participant's all-average-rating
                 participant_sheets[participant]['participation-count'] += 1
                 participant_sheets[participant]['all-average-rating'] += participant_rating
-        participant_sheets[participant]['all-average-rating'] /= participant_sheets[participant]['participation-count']
 
+                # Calculate received ratings for movies suggested by the current participant
+                for movie_row in main_sheet:
+                    if movie_row['name'] == movie_name and movie_row['suggester'] != participant:
+                        participant_sheets[participant]['received-average-rating'] += participant_rating
+                        received_count += 1
+
+        # Calculate all-average-rating and received-average-rating
+        if data['participation-count'] > 0:
+            participant_sheets[participant]['all-average-rating'] /= data['participation-count']
+
+        participant_sheets[participant]['received-average-rating'] = participant_sheets[participant]['received-average-rating'] / received_count
 
     return main_sheet, participant_sheets
+
 
 def format_ouput_content(participant_sheets):
     output = "# Cinéfilos Processing Results\n\n"
@@ -182,6 +202,13 @@ def format_ouput_content(participant_sheets):
     for person, data in sorted_items:
         output += f"- {person}: {data['all-average-rating']:.2f} average rating\n"
 
+    # Average Rating Metrics
+    output += "\n### Average Rating of selected movies of that person (excluding her own)\n\n"
+    output += "**Rating of selected movies:**\n"
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['received-average-rating'])
+    for person, data in sorted_items:
+        output += f"- {person}: {data['received-average-rating']:.2f} received average rating\n"
+
     return output
 
 # Main function to preprocess and write details to the output file
@@ -202,12 +229,6 @@ def main():
 
     # # Section for Voting Patterns and Preferences
     # formatted_file += "## Voting Patterns and Preferences\n\n"
-
-    # # Average Rating Metrics
-    # formatted_file += "### Average Rating Given by Each Person for all movies\n\n"
-    # average_ratings = calculate_average_ratings(participant_sheets)
-    # for person, avg_rating in average_ratings.items():
-    #     formatted_file += f"- {person}: {avg_rating:.2f} average rating\n"
 
     # # Average Rating for Suggested Movies
     # formatted_file += "\n### Average Rating for All Suggested Movies of each person\n\n"
