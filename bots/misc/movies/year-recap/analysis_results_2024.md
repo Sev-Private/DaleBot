@@ -62,3 +62,27 @@
 - Baby: 4.33 given average rating
 - João: 4.67 given average rating
 - Sand: 5.00 given average rating
+
+## Best and Worst Suggestions
+
+### Highest and Lowest Rated Movies
+
+**Average rating of each movie in order:**
+- Maxxxine, suggested by João with an average rating of 1.80 **the worst movie we watched..**
+.- Family Plan, suggested by Sev with an average rating of 2.25
+- Old, suggested by Victor with an average rating of 2.25
+- The Other Lamb, suggested by Sand with an average rating of 2.40
+- Oldboy, suggested by João with an average rating of 2.75
+- Late night with the devil, suggested by João with an average rating of 2.80
+- The Grand Budapest Hotel, suggested by Baby with an average rating of 3.00
+- Red One, suggested by Victor with an average rating of 3.20
+- The Watchers, suggested by Victor with an average rating of 3.25
+- Source code, suggested by Sev with an average rating of 3.40
+- The Count of Monte Cristo, suggested by Baby with an average rating of 4.00
+- 1408, suggested by Victor with an average rating of 4.00
+- Blood And Gold, suggested by Sand with an average rating of 4.25
+- Hacksaw Ridge, suggested by Baby with an average rating of 4.40
+- What Women Want, suggested by Sand with an average rating of 4.50
+- Shutter Island, suggested by Victor with an average rating of 4.80
+- Tolkien, suggested by Victor with an average rating of 5.00 **won GOTY of the year**
+.

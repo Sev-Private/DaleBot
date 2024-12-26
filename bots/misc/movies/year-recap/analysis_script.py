@@ -193,7 +193,7 @@ def format_ouput_content(main_sheet, participant_sheets):
 
     # Suggestion Metrics
     output += "### Most and Least Suggestions\n\n"
-    output += "**Suggestions per person:**"
+    output += "**Suggestions per person:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['suggestion-count'])
     # Print each user with their suggestion count
     for person, data in sorted_items:
@@ -237,6 +237,29 @@ def format_ouput_content(main_sheet, participant_sheets):
     for person, data in sorted_items:
         output += f"- {person}: {data['bias-average-rating']:.2f} given average rating\n"
 
+    #  Section for Best and Worst Suggestions
+    output += "\n## Best and Worst Suggestions\n\n"
+
+    # Highest and Lowest Rated Movies
+    output += "\n### Highest and Lowest Rated Movies\n\n"
+    output += "**Average rating of each movie in order:**\n"
+    sorted_items =  sorted(main_sheet, key=lambda x: x['average-rating'])
+    for index, movie_data in enumerate(sorted_items):
+        output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with an average rating of {movie_data['average-rating']:.2f}"
+
+        if index == 0:
+            output += " **the worst movie we watched...**\n"
+        elif index == len(sorted_items) - 1:
+            output += " **won GOTY of the year!**\n"
+        else:
+            output += "\n"
+
+    #  Section for Controversy and Consensus
+    output += "\n## Controversy and Consensus\n\n"
+
+    # Most Controversial Movies
+    output += "\n### Most Controversial Movies\n\n"
+    output += "**Average rating of each movie in order:**\n"
 
     return output
 
