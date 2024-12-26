@@ -23,40 +23,6 @@ print(f"Most Suggestions: {most_suggested}")
 print(f"Least Suggestions: {least_suggested}")
 
 
-def calculate_suggestion_metrics(filtered_main_sheet):
-    suggestion_counts = empty_counter(0)
-    suggestion_movies = empty_counter([])
-    # Iterate over the filtered rows in the main sheet
-    for row in filtered_main_sheet:
-        suggester = row[3]  # Assuming "suggested by" is the 4th column (index 3)
-        movie = row[0]  # Movie name is in the 1st column (index 0)
-
-        # Count suggestions for each suggester and track movies they suggested
-        if suggester == "Thiago Augusto":
-            suggestion_counts["Sev"] += 1
-            suggestion_movies["Sev"].append(movie)
-        elif suggester == "joaovictorcosta1997@gmail.com":
-            suggestion_counts["João"] += 1
-            suggestion_movies["João"].append(movie)
-        elif suggester == "Victor Eduardo":
-            suggestion_counts["Victor"] += 1
-            suggestion_movies["Victor"].append(movie)
-        elif suggester == "Gustavo Paes":
-            suggestion_counts["Baby"] += 1
-            suggestion_movies["Baby"].append(movie)
-        elif suggester == "sand.dejesus@gmail.com":
-            suggestion_counts["Sand"] += 1
-            suggestion_movies["Sand"].append(movie)
-
-    # Find most and least suggestions
-    most_suggested_count = max(suggestion_counts.values())
-    least_suggested_count = min(suggestion_counts.values())
-
-    most_suggested = [person for person, count in suggestion_counts.items() if count == most_suggested_count]
-    least_suggested = [person for person, count in suggestion_counts.items() if count == least_suggested_count]
-
-    return suggestion_counts, most_suggested, least_suggested, suggestion_movies
-
 # 2. Most and Least Participation  
 # Count how many movies each person has voted on to determine who has participated in rating the most and least movies.
 

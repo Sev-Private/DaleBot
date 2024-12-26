@@ -124,16 +124,20 @@ def preprocess_spreadsheet(year, script_dir):
             columns = row.split(";")
             if len(columns) > 1 and columns[0] in filtered_movies:  # Only consider ratings for filtered movies
                 filtered_rows.append({
-                    "name": columns[0],
-                    "rating": int(columns[1]) if len(columns) > 1 and columns[1].isdigit() else None
+                    'name': columns[0],
+                    'rating': int(columns[1]) if len(columns) > 1 and columns[1].isdigit() else None
                 })
 
         participant_sheets[participant_name] = {
             'csv': filtered_rows,
+            'suggested-movies': [],
             'suggestion-count': 0,
             'participation-count': 0,
-            'all-average-rating': 0
-            'received-average-rating': 0
+            'all-average-rating': 0,
+            'received-average-count': 0,
+            'received-average-rating': 0,
+            'critical-average-rating': 0,
+            'bias-average-rating': 0,
         }
     return filtered_main_sheet, participant_sheets
 
@@ -142,36 +146,46 @@ def process_data(main_sheet, participant_sheets):
     for movie_row in main_sheet:
         suggester = movie_row['suggester']
         participant_sheets[suggester]['suggestion-count'] += 1
+        participant_sheets[suggester]['received-average-count'] += 1
+        participant_sheets[suggester]['received-average-rating'] += movie_row['average-rating']
+        participant_sheets[suggester]['suggested-movies'].append(movie_row['name'])
 
     # Process ratings
     for participant, data in participant_sheets.items():
-        received_count = 0
 
         for participant_row in data['csv']:
             participant_rating = participant_row['rating']
-            movie_name = participant_row['name']
 
+            # Means participant watched given movie
             if participant_rating is not None:
                 # Calculate individual participant's all-average-rating
                 participant_sheets[participant]['participation-count'] += 1
                 participant_sheets[participant]['all-average-rating'] += participant_rating
 
-                # Calculate received ratings for movies suggested by the current participant
-                for movie_row in main_sheet:
-                    if movie_row['name'] == movie_name and movie_row['suggester'] != participant:
-                        participant_sheets[participant]['received-average-rating'] += participant_rating
-                        received_count += 1
+                # Means participant suggested that movie
+                if participant_row['name'] in participant_sheets[participant]['suggested-movies']:
+                    participant_sheets[participant]['bias-average-rating'] += participant_rating
+                # Means participant did not suggest that movie
+                else:
+                    participant_sheets[participant]['critical-average-rating'] += participant_rating
 
-        # Calculate all-average-rating and received-average-rating
+        suggested_movies_count = len(data['suggested-movies'])
+
         if data['participation-count'] > 0:
-            participant_sheets[participant]['all-average-rating'] /= data['participation-count']
+            participant_sheets[participant]['all-average-rating'] /= (data['participation-count'] - suggested_movies_count)
 
-        participant_sheets[participant]['received-average-rating'] = participant_sheets[participant]['received-average-rating'] / received_count
+            participant_sheets[participant]['critical-average-rating'] /= data['participation-count']
+
+        if data['received-average-count'] > 0:
+            participant_sheets[participant]['received-average-rating'] /= data['received-average-count']
+        
+        if suggested_movies_count > 0:
+            participant_sheets[participant]['bias-average-rating'] /= suggested_movies_count
 
     return main_sheet, participant_sheets
 
 
-def format_ouput_content(participant_sheets):
+def format_ouput_content(main_sheet, participant_sheets):
     output = "# Cinéfilos Processing Results\n\n"
 
     # Section for Suggestion and Participation
@@ -195,19 +209,34 @@ def format_ouput_content(participant_sheets):
     #  Section for Voting Patterns and Preferences
     output += "\n## Voting Patterns and Preferences\n\n"
 
-    # Average Rating Metrics
+    # Average Rating Given Metrics
     output += "### Average Rating Given by Each Person for all movies they've watched\n\n"
     output += "**Rating per person:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['all-average-rating'])
     for person, data in sorted_items:
-        output += f"- {person}: {data['all-average-rating']:.2f} average rating\n"
+        output += f"- {person}: {data['all-average-rating']:.2f} given average rating\n"
 
-    # Average Rating Metrics
-    output += "\n### Average Rating of selected movies of that person (excluding her own)\n\n"
+    # Average Rating Received Metrics
+    output += "\n### Average (of average) Rating of selected movies by that person\n\n"
     output += "**Rating of selected movies:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['received-average-rating'])
     for person, data in sorted_items:
         output += f"- {person}: {data['received-average-rating']:.2f} received average rating\n"
+
+    # Most Generous and Most Critical Viewers
+    output += "\n### Most Generous and Critical Viewers\n\n"
+    output += "**Average rating given to movies of other people:**\n"
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['critical-average-rating'])
+    for person, data in sorted_items:
+        output += f"- {person}: {data['critical-average-rating']:.2f} given average rating\n"
+
+    # Biased Ratings
+    output += "\n### Most Biased and Least Biased Viewers\n\n"
+    output += "**Average rating given to own movies:**\n"
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['bias-average-rating'])
+    for person, data in sorted_items:
+        output += f"- {person}: {data['bias-average-rating']:.2f} given average rating\n"
+
 
     return output
 
@@ -223,31 +252,9 @@ def main():
     format_print(processed_main)
     format_print(processed_participant)
 
-    content = format_ouput_content(processed_participant)
+    content = format_ouput_content(processed_main, processed_participant)
 
     output_path =  write_to_output_file(year, script_dir, content)
-
-    # # Section for Voting Patterns and Preferences
-    # formatted_file += "## Voting Patterns and Preferences\n\n"
-
-    # # Average Rating for Suggested Movies
-    # formatted_file += "\n### Average Rating for All Suggested Movies of each person\n\n"
-    # average_ratings_for_suggested = calculate_average_rating_for_suggested_movies(participant_sheets, suggestion_movies)
-    # for person, avg_rating in average_ratings_for_suggested.items():
-    #     formatted_file += f"{person}: {avg_rating:.2f}\n"
-    # formatted_file += "\n"
-
-    # # Most Generous and Most Critical Viewers
-    # formatted_file += "\n### Most Generous and Critical Viewers\n\n"
-    # generosity, criticality, most_generous_viewer, most_critical_viewer = calculate_average_rating_given_to_suggested_movies(participant_sheets, suggestion_movies)
-    # formatted_file += f"- **Most Generous Viewer**: {most_generous_viewer} ({generosity[most_generous_viewer]:.2f})\n"
-    # formatted_file += f"- **Most Critical Viewer**: {most_critical_viewer} ({criticality[most_critical_viewer]:.2f})\n"
-
-    # # Biased Ratings
-    # formatted_file += "\n### Most Biased and Least Biased Viewers\n\n"
-    # biased_ratings, most_biased_viewer, least_biased_viewer = calculate_biased_ratings(participant_sheets, suggestion_movies)
-    # formatted_file += f"- **Most Biased Viewer**: {most_biased_viewer} ({biased_ratings[most_biased_viewer]:.2f})\n"
-    # formatted_file += f"- **Least Biased Viewer**: {least_biased_viewer} ({biased_ratings[least_biased_viewer]:.2f})\n"
 
     # Print message to indicate the results were saved
     print(f"Analysis complete for the year {year}. Results saved to {output_path}")
