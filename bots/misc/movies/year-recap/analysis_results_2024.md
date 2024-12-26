@@ -4,7 +4,8 @@
 
 ### Most and Least Suggestions
 
-**Suggestions per person:**- Átila: 0 suggestions
+**Suggestions per person:**
+- Átila: 0 suggestions
 - Sev: 2 suggestions
 - Sand: 3 suggestions
 - Baby: 3 suggestions
@@ -68,8 +69,8 @@
 ### Highest and Lowest Rated Movies
 
 **Average rating of each movie in order:**
-- Maxxxine, suggested by João with an average rating of 1.80 **the worst movie we watched..**
-.- Family Plan, suggested by Sev with an average rating of 2.25
+- Maxxxine, suggested by João with an average rating of 1.80 **the worst movie we watched...**
+- Family Plan, suggested by Sev with an average rating of 2.25
 - Old, suggested by Victor with an average rating of 2.25
 - The Other Lamb, suggested by Sand with an average rating of 2.40
 - Oldboy, suggested by João with an average rating of 2.75
@@ -84,5 +85,10 @@
 - Hacksaw Ridge, suggested by Baby with an average rating of 4.40
 - What Women Want, suggested by Sand with an average rating of 4.50
 - Shutter Island, suggested by Victor with an average rating of 4.80
-- Tolkien, suggested by Victor with an average rating of 5.00 **won GOTY of the year**
-.
+- Tolkien, suggested by Victor with an average rating of 5.00 **won GOTY of the year!**
+
+## Controversy and Consensus
+
+### Most Controversial Movies
+
+**Average rating of each movie in order:**

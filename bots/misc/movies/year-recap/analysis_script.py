@@ -104,7 +104,7 @@ def preprocess_spreadsheet(year, script_dir):
                 date_watched = datetime.strptime(columns[2], "%d/%b./%Y")
                 if date_watched.year == year:
                     filtered_movies.append(columns[0])  # Add movie name to the filtered list
-                    filtered_main_sheetcolumns[0] = {
+                    filtered_main_sheet[columns[0]] = {
                         "name": columns[0],
                         "imdb-link": columns[1],
                         "suggester": set_participant_aliases(columns[3]),
@@ -134,7 +134,6 @@ def preprocess_spreadsheet(year, script_dir):
             'suggestion-count': 0,
             'participation-count': 0,
             'all-average-rating': 0,
-            'received-average-count': 0,
             'received-average-rating': 0,
             'critical-average-rating': 0,
             'bias-average-rating': 0,
@@ -143,44 +142,42 @@ def preprocess_spreadsheet(year, script_dir):
 
 def process_data(main_sheet, participant_sheets):
     # Track suggestions and ratings
-    for movie_std_devsindex, movie_row in main_sheet.items():
-        suggester = movie_row['suggester']
+    for movie_name, movie_row_data in main_sheet.items():
+        suggester = movie_row_data['suggester']
         participant_sheets[suggester]['suggestion-count'] += 1
-        participant_sheets[suggester]['received-average-count'] += 1
-        participant_sheets[suggester]['received-average-rating'] += movie_row['average-rating']
-        participant_sheets[suggester]['suggested-movies'].append(movie_row['name'])
+        participant_sheets[suggester]['received-average-rating'] += movie_row_data['average-rating']
+        participant_sheets[suggester]['suggested-movies'].append(movie_row_data['name'])
 
     # Process ratings
-    for participant_index, participant_data in participant_sheets.items():
-
-        for participant_row in participant_data['csv']:
-            participant_rating = participant_row['rating']
+    for participant_name, participant_data in participant_sheets.items():
+        for participant_movie_data in participant_data['csv']:
+            participant_rating = participant_movie_data['rating']
 
             # Means participant watched given movie
             if participant_rating is not None:
                 # Calculate individual participant's all-average-rating
-                participant_sheets[participant]['participation-count'] += 1
-                participant_sheets[participant]['all-average-rating'] += participant_rating
+                participant_data['participation-count'] += 1
+                participant_data['all-average-rating'] += participant_rating
 
                 # Means participant suggested that movie
-                if participant_row['name'] in participant_sheets[participant]['suggested-movies']:
-                    participant_sheets[participant]['bias-average-rating'] += participant_rating
+                if participant_movie_data['name'] in participant_data['suggested-movies']:
+                    participant_data['bias-average-rating'] += participant_rating
                 # Means participant did not suggest that movie
                 else:
-                    participant_sheets[participant]['critical-average-rating'] += participant_rating
+                    participant_data['critical-average-rating'] += participant_rating
 
         suggested_movies_count = len(participant_data['suggested-movies'])
 
         if participant_data['participation-count'] > 0:
-            participant_sheets[participant]['all-average-rating'] /= (participant_data['participation-count'] - suggested_movies_count)
+            participant_data['all-average-rating'] /= (participant_data['participation-count'] - suggested_movies_count)
 
-            participant_sheets[participant]['critical-average-rating'] /= participant_data['participation-count']
+            participant_data['critical-average-rating'] /= participant_data['participation-count']
 
-        if participant_data['received-average-count'] > 0:
-            participant_sheets[participant]['received-average-rating'] /= participant_data['received-average-count']
+        if suggested_movies_count > 0:
+            participant_data['received-average-rating'] /= suggested_movies_count
         
         if suggested_movies_count > 0:
-            participant_sheets[participant]['bias-average-rating'] /= suggested_movies_count
+            participant_data['bias-average-rating'] /= suggested_movies_count
 
     return main_sheet, participant_sheets
 
@@ -241,12 +238,11 @@ def format_ouput_content(main_sheet, participant_sheets):
     output += "\n## Best and Worst Suggestions\n\n"
 
     # Highest and Lowest Rated Movies
-    output += "\n### Highest and Lowest Rated Movies\n\n"
+    output += "### Highest and Lowest Rated Movies\n\n"
     output += "**Average rating of each movie in order:**\n"
-    sorted_items =  sorted(main_sheet.items(), key=lambda x: x[1]['average-rating'])
-    for index, movie_data in enumerate(sorted_items):
+    sorted_items = sorted(main_sheet.items(), key=lambda x: x[1]['average-rating'])
+    for index, (movie_name, movie_data) in enumerate(sorted_items):
         output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with an average rating of {movie_data['average-rating']:.2f}"
-
         if index == 0:
             output += " **the worst movie we watched...**\n"
         elif index == len(sorted_items) - 1:
@@ -254,11 +250,12 @@ def format_ouput_content(main_sheet, participant_sheets):
         else:
             output += "\n"
 
+
     #  Section for Controversy and Consensus
     output += "\n## Controversy and Consensus\n\n"
 
     # Most Controversial Movies
-    output += "\n### Most Controversial Movies\n\n"
+    output += "### Most Controversial Movies\n\n"
     output += "**Average rating of each movie in order:**\n"
 
     return output
