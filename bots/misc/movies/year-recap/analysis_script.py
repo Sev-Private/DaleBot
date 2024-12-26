@@ -105,10 +105,11 @@ def preprocess_spreadsheet(year, script_dir):
                 if date_watched.year == year:
                     filtered_movies.append(columns[0])  # Add movie name to the filtered list
                     filtered_main_sheet[columns[0]] = {
-                        "name": columns[0],
-                        "imdb-link": columns[1],
-                        "suggester": set_participant_aliases(columns[3]),
-                        "average-rating": locale.atof(columns[4]),
+                        'name': columns[0],
+                        'imdb-link': columns[1],
+                        'suggester': set_participant_aliases(columns[3]),
+                        'average-rating': locale.atof(columns[4]),
+                        'individual-ratings': {}
                     } # Add movie name to the main sheet file
             except ValueError:
                 continue  # Skip if the date is invalid or in the wrong format
@@ -152,6 +153,8 @@ def process_data(main_sheet, participant_sheets):
     for participant_name, participant_data in participant_sheets.items():
         for participant_movie_data in participant_data['csv']:
             participant_rating = participant_movie_data['rating']
+
+            main_sheet[participant_movie_data['name']]['individual-ratings'][participant_name] = participant_rating
 
             # Means participant watched given movie
             if participant_rating is not None:
