@@ -6,6 +6,7 @@ import locale
 from datetime import datetime
 import sys
 import argparse
+import statistics
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import csv
@@ -109,7 +110,9 @@ def preprocess_spreadsheet(year, script_dir):
                         'imdb-link': columns[1],
                         'suggester': set_participant_aliases(columns[3]),
                         'average-rating': locale.atof(columns[4]),
-                        'individual-ratings': {}
+                        'individual-ratings': {},
+                        'standard-deviation': 0,
+                        'rating-range': 0,
                     } # Add movie name to the main sheet file
             except ValueError:
                 continue  # Skip if the date is invalid or in the wrong format
@@ -154,8 +157,6 @@ def process_data(main_sheet, participant_sheets):
         for participant_movie_data in participant_data['csv']:
             participant_rating = participant_movie_data['rating']
 
-            main_sheet[participant_movie_data['name']]['individual-ratings'][participant_name] = participant_rating
-
             # Means participant watched given movie
             if participant_rating is not None:
                 # Calculate individual participant's all-average-rating
@@ -169,6 +170,9 @@ def process_data(main_sheet, participant_sheets):
                 else:
                     participant_data['critical-average-rating'] += participant_rating
 
+                # Adds calculations of individual rating in the main sheet to check controversies
+                main_sheet[participant_movie_data['name']]['individual-ratings'][participant_name] = participant_rating
+
         suggested_movies_count = len(participant_data['suggested-movies'])
 
         if participant_data['participation-count'] > 0:
@@ -181,9 +185,15 @@ def process_data(main_sheet, participant_sheets):
         
         if suggested_movies_count > 0:
             participant_data['bias-average-rating'] /= suggested_movies_count
+    
+    for movie_name, movie_data in main_sheet.items():
+        ratings = list(movie_data['individual-ratings'].values())
+        
+        # Calculate standard deviation and range
+        movie_data['standard-deviation'] = statistics.stdev(ratings)
+        movie_data['rating-range'] = max(ratings) - min(ratings)
 
     return main_sheet, participant_sheets
-
 
 def format_ouput_content(main_sheet, participant_sheets):
     output = "# Cinéfilos Processing Results\n\n"
@@ -257,9 +267,18 @@ def format_ouput_content(main_sheet, participant_sheets):
     #  Section for Controversy and Consensus
     output += "\n## Controversy and Consensus\n\n"
 
-    # Most Controversial Movies
+    # Most Controversial & Consensual Movies
     output += "### Most Controversial Movies\n\n"
-    output += "**Average rating of each movie in order:**\n"
+    output += "**List of  movies based on how much people agreed on their rating using standard deviation and rating range, from least to most:**\n"
+    sorted_items = sorted(main_sheet.items(), key=lambda x: x[1]['standard-deviation'])
+    for index, (movie_name, movie_data) in enumerate(sorted_items):
+        output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with standard deviation value of {movie_data['standard-deviation']:.2f} and rating range of {movie_data['rating-range']:.2f}"
+        if index == 0:
+            output += " **the movie we agreed on ratings the most...**\n"
+        elif index == len(sorted_items) - 1:
+            output += " **the most controversial movie!**\n"
+        else:
+            output += "\n"
 
     return output
 

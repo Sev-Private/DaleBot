@@ -91,4 +91,21 @@
 
 ### Most Controversial Movies
 
-**Average rating of each movie in order:**
+**List of  movies based on how much people agreed on their rating using standard deviation and rating range, from least to most:**
+- Tolkien, suggested by Victor with standard deviation value of 0.00 and rating range of 0.00 **the movie we agreed on ratings the most...**
+- Shutter Island, suggested by Victor with standard deviation value of 0.45 and rating range of 1.00
+- Old, suggested by Victor with standard deviation value of 0.50 and rating range of 1.00
+- Source code, suggested by Sev with standard deviation value of 0.55 and rating range of 1.00
+- 1408, suggested by Victor with standard deviation value of 0.58 and rating range of 1.00
+- The Count of Monte Cristo, suggested by Baby with standard deviation value of 0.82 and rating range of 2.00
+- Hacksaw Ridge, suggested by Baby with standard deviation value of 0.89 and rating range of 2.00
+- Blood And Gold, suggested by Sand with standard deviation value of 0.96 and rating range of 2.00
+- Oldboy, suggested by João with standard deviation value of 0.96 and rating range of 2.00
+- What Women Want, suggested by Sand with standard deviation value of 1.00 and rating range of 2.00
+- The Watchers, suggested by Victor with standard deviation value of 1.26 and rating range of 3.00
+- The Grand Budapest Hotel, suggested by Baby with standard deviation value of 1.26 and rating range of 3.00
+- Late night with the devil, suggested by João with standard deviation value of 1.30 and rating range of 3.00
+- Red One, suggested by Victor with standard deviation value of 1.48 and rating range of 4.00
+- Family Plan, suggested by Sev with standard deviation value of 1.50 and rating range of 3.00
+- The Other Lamb, suggested by Sand with standard deviation value of 1.67 and rating range of 4.00
+- Maxxxine, suggested by João with standard deviation value of 1.79 and rating range of 4.00 **the most controversial movie!**
