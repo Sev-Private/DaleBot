@@ -1,48 +1,60 @@
 #!/usr/bin/env python3
 
-
-import os
-import locale
-from datetime import datetime
-import sys
 import argparse
-import statistics
-import re
-import requests
-from dotenv import load_dotenv
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import requests_cache
+import locale
+import os
 import pprint
+import re
+import statistics
+import subprocess
+from datetime import datetime
 
-IMDB_REQUEST_LINK = "http://www.omdbapi.com/?i=tt3896198&apikey=fdd65410"
+import gspread
+import requests
+import requests_cache
+from dotenv import load_dotenv
+from oauth2client.service_account import ServiceAccountCredentials
+
 
 def initialize_config_and_return_arguments():
-     # This works in systems where Portuguese locale is available
-    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8') 
-    locale.setlocale(locale.LC_NUMERIC, 'pt_BR.UTF-8')
-    
+    # This works in systems where Portuguese locale is available
+    locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
+    locale.setlocale(locale.LC_NUMERIC, "pt_BR.UTF-8")
+
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Process spreadsheet and extract data.")
-    parser.add_argument('year', type=int, help="The year for which to run the analysis")
+    parser = argparse.ArgumentParser(
+        description="Process spreadsheet and extract data."
+    )
+    parser.add_argument("year", type=int, help="The year for which to run the analysis")
+    parser.add_argument(
+        "--generate-slide",
+        action="store_true",
+        help="Set this flag to run the slide creation process",
+    )
     args = parser.parse_args()
 
     load_dotenv()
 
-    requests_cache.install_cache('api_cache', expire_after=43200)
-    
-    return args.year
+    requests_cache.install_cache("api_cache", expire_after=43200)
+
+    return args.year, args.generate_slide
+
 
 # Function to authenticate and get the Google Sheets client
 def authenticate_google_sheets(credentials_json):
     # Define the scope for Google Sheets and Google Drive API access
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
 
     # Authenticate using the service account credentials
     creds = ServiceAccountCredentials.from_json_keyfile_name(credentials_json, scope)
     client = gspread.authorize(creds)
-    
+
     return client
+
 
 # Function to export a worksheet to a CSV string
 def export_to_csv(worksheet):
@@ -50,13 +62,16 @@ def export_to_csv(worksheet):
     csv_data = "\n".join([";".join(row) for row in rows])
     return csv_data
 
+
 def format_print(data):
     pp = pprint.PrettyPrinter(indent=4, width=100)
     pp.pprint(data)
 
+
 # Get the directory of the current script
 def define_script_dir():
     return os.path.dirname(os.path.abspath(__file__))
+
 
 def set_participant_aliases(suggester):
     # Map suggester to sheet_title
@@ -65,12 +80,13 @@ def set_participant_aliases(suggester):
         "joaovictorcosta1997@gmail.com": "João",
         "Victor Eduardo": "Victor",
         "Gustavo Paes": "Baby",
-        "sand.dejesus@gmail.com": "Sand"
+        "sand.dejesus@gmail.com": "Sand",
     }
 
     if suggester in suggester_map:
         return suggester_map[suggester]
     return ""
+
 
 def write_to_output_file(year, script_dir, content):
     # Define the output file name with the year
@@ -81,8 +97,9 @@ def write_to_output_file(year, script_dir, content):
     with open(output_path, "w") as file:
         # Write final details in the file
         file.write(content)
-    
+
     return output_path
+
 
 def fetch_imdb_movie_data(imdb_link):
 
@@ -95,8 +112,8 @@ def fetch_imdb_movie_data(imdb_link):
 
     base_url = "http://www.omdbapi.com/"
     params = {
-        'apikey': os.getenv("IMDB_API_KEY"),
-        'i': imdb_id,  # Search by IMDb ID
+        "apikey": os.getenv("IMDB_API_KEY"),
+        "i": imdb_id,  # Search by IMDb ID
     }
     # Remove None values to avoid conflicts
     params = {k: v for k, v in params.items() if v is not None}
@@ -104,7 +121,7 @@ def fetch_imdb_movie_data(imdb_link):
     response = requests.get(base_url, params=params)
     if response.status_code == 200:
         data = response.json()
-        if data.get('Response') == 'True':
+        if data.get("Response") == "True":
             return data
         else:
             print(f"Error: {data.get('Error')}")
@@ -113,36 +130,23 @@ def fetch_imdb_movie_data(imdb_link):
         print(f"HTTP Error: {response.status_code}")
         return None
 
-# def convert_to_slide(md_file, script_dir, year):
-#     # Read the Markdown file
-#     with open(md_file, 'r') as f:
-#         lines = f.readlines()
 
-#     # Initialize a presentation
-#     prs = Presentation()
-#     slide = None
+def convert_to_slide(md_file, script_dir, year):
+    # Define the output file name with the year
+    output_file = f"analysis_results_{year}.html"
 
-#     for line in lines:
-#         if line.strip() == "---":  # Slide delimiter
-#             slide = None
-#         elif slide is None:  # Create a new slide
-#             slide = prs.slides.add_slide(prs.slide_layouts[1])
-#             title_placeholder = slide.shapes.title
-#             title_placeholder.text = line.strip()  # Set title
-#         else:  # Add content to slide
-#             content_placeholder = slide.placeholders[1]
-#             content_placeholder.text += line.strip() + "\n"
+    # Write details to the output file
+    output_path = os.path.join(script_dir, output_file)
 
-#     # Define the output file name with the year
-#     output_file = f"analysis_results_{year}.pptx"
+    try:
+        # Run the Marp command
+        command = ["marp", md_file, "--output", output_path]
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running Marp: {e}")
 
-#     # Write details to the output file
-#     output_path = os.path.join(script_dir, output_file)
-    
-#     # Save the presentation
-#     prs.save(output_path)
+    return output_path
 
-#     return output_path
 
 def preprocess_spreadsheet(year, script_dir):
     credentials_json = os.path.join(script_dir, os.getenv("CREDENTIALS_JSON"))
@@ -152,7 +156,7 @@ def preprocess_spreadsheet(year, script_dir):
 
     # Open the spreadsheet
     spreadsheet = client.open_by_url(os.getenv("SHEET_URL"))
-    
+
     # Extract the main file (first sheet)
     main_sheet = spreadsheet.get_worksheet(0)
     main_csv = export_to_csv(main_sheet)
@@ -165,116 +169,142 @@ def preprocess_spreadsheet(year, script_dir):
         columns = row.split(";")
         movie_name = columns[0]
         imdb_link = columns[1]
-        if movie_name == '':
+        if movie_name == "":
             break
         if len(columns) > 2:  # Ensure there is a date column
             try:
                 date_watched = datetime.strptime(columns[2], "%d/%b./%Y")
                 if date_watched.year == year:
-                    filtered_movies.append(movie_name)  # Add movie name to the filtered list
+                    filtered_movies.append(
+                        movie_name
+                    )  # Add movie name to the filtered list
                     filtered_main_sheet[movie_name] = {
-                        'name': movie_name,
-                        'imdb-link': imdb_link,
-                        'suggester': set_participant_aliases(columns[3]),
-                        'average-rating': locale.atof(columns[4]),
-                        'individual-ratings': {},
-                        'standard-deviation': 0,
-                        'rating-range': 0,
-                        'imdb-data': fetch_imdb_movie_data(imdb_link)
+                        "name": movie_name,
+                        "imdb-link": imdb_link,
+                        "suggester": set_participant_aliases(columns[3]),
+                        "average-rating": locale.atof(columns[4]),
+                        "individual-ratings": {},
+                        "standard-deviation": 0,
+                        "rating-range": 0,
+                        "imdb-data": fetch_imdb_movie_data(imdb_link),
                     }
             except ValueError:
                 print("ERROR: please check this before continuing")
                 continue  # Skip if the date is invalid or in the wrong format
-    
+
     # Extract participant sheets with filter
     participant_sheets = {}
-    for sheet in spreadsheet.worksheets()[1:]: # Ignore main sheet
+    for sheet in spreadsheet.worksheets()[1:]:  # Ignore main sheet
         participant_csv = export_to_csv(sheet)
         participant_name = sheet.title
         rows = participant_csv.split("\n")
         filtered_rows = []
         for row in rows[1:]:  # Skipping the header
             columns = row.split(";")
-            if len(columns) > 1 and columns[0] in filtered_movies:  # Only consider ratings for filtered movies
-                filtered_rows.append({
-                    'name': columns[0],
-                    'rating': int(columns[1]) if len(columns) > 1 and columns[1].isdigit() else None
-                })
+            if (
+                len(columns) > 1 and columns[0] in filtered_movies
+            ):  # Only consider ratings for filtered movies
+                filtered_rows.append(
+                    {
+                        "name": columns[0],
+                        "rating": (
+                            int(columns[1])
+                            if len(columns) > 1 and columns[1].isdigit()
+                            else None
+                        ),
+                    }
+                )
 
         participant_sheets[participant_name] = {
-            'csv': filtered_rows,
-            'suggested-movies': [],
-            'participation-count': 0,
-            'all-average-rating': 0,
-            'received-average-rating': 0,
-            'critical-average-rating': 0,
-            'bias-average-rating': 0,
-            'worst-suggestion': None,
-            'best-suggestion': None,
+            "csv": filtered_rows,
+            "suggested-movies": [],
+            "participation-count": 0,
+            "all-average-rating": 0,
+            "received-average-rating": 0,
+            "critical-average-rating": 0,
+            "bias-average-rating": 0,
+            "worst-suggestion": None,
+            "best-suggestion": None,
         }
     return filtered_main_sheet, participant_sheets
+
 
 def process_data(main_sheet, participant_sheets):
     # Track suggestions and ratings
     for movie_name, movie_row_data in main_sheet.items():
-        suggester = movie_row_data['suggester']
-        movie_name = movie_row_data['name']
-        movie_average_rating = movie_row_data['average-rating']
-        participant_sheets[suggester]['received-average-rating'] += movie_average_rating
-        participant_sheets[suggester]['suggested-movies'].append(movie_name)
+        suggester = movie_row_data["suggester"]
+        movie_name = movie_row_data["name"]
+        movie_average_rating = movie_row_data["average-rating"]
+        participant_sheets[suggester]["received-average-rating"] += movie_average_rating
+        participant_sheets[suggester]["suggested-movies"].append(movie_name)
 
-        new_movie_item = {
-                'name': movie_name,
-                'rating': movie_average_rating
-            }
-        if participant_sheets[suggester]['best-suggestion'] is None or participant_sheets[suggester]['best-suggestion']['rating'] < movie_average_rating:
-            participant_sheets[suggester]['best-suggestion'] = new_movie_item.copy()
-        
-        if participant_sheets[suggester]['worst-suggestion'] is None or participant_sheets[suggester]['worst-suggestion']['rating'] > movie_average_rating:
-            participant_sheets[suggester]['worst-suggestion'] = new_movie_item.copy()
+        new_movie_item = {"name": movie_name, "rating": movie_average_rating}
+        if (
+            participant_sheets[suggester]["best-suggestion"] is None
+            or participant_sheets[suggester]["best-suggestion"]["rating"]
+            < movie_average_rating
+        ):
+            participant_sheets[suggester]["best-suggestion"] = new_movie_item.copy()
+
+        if (
+            participant_sheets[suggester]["worst-suggestion"] is None
+            or participant_sheets[suggester]["worst-suggestion"]["rating"]
+            > movie_average_rating
+        ):
+            participant_sheets[suggester]["worst-suggestion"] = new_movie_item.copy()
 
     # Process ratings
     for participant_name, participant_data in participant_sheets.items():
-        for participant_movie_data in participant_data['csv']:
-            participant_rating = participant_movie_data['rating']
+        for participant_movie_data in participant_data["csv"]:
+            participant_rating = participant_movie_data["rating"]
 
             # Means participant watched given movie
             if participant_rating is not None:
                 # Calculate individual participant's all-average-rating
-                participant_data['participation-count'] += 1
-                participant_data['all-average-rating'] += participant_rating
+                participant_data["participation-count"] += 1
+                participant_data["all-average-rating"] += participant_rating
 
                 # Means participant suggested that movie
-                if participant_movie_data['name'] in participant_data['suggested-movies']:
-                    participant_data['bias-average-rating'] += participant_rating
+                if (
+                    participant_movie_data["name"]
+                    in participant_data["suggested-movies"]
+                ):
+                    participant_data["bias-average-rating"] += participant_rating
                 # Means participant did not suggest that movie
                 else:
-                    participant_data['critical-average-rating'] += participant_rating
+                    participant_data["critical-average-rating"] += participant_rating
 
                 # Adds calculations of individual rating in the main sheet to check controversies
-                main_sheet[participant_movie_data['name']]['individual-ratings'][participant_name] = participant_rating
+                main_sheet[participant_movie_data["name"]]["individual-ratings"][
+                    participant_name
+                ] = participant_rating
 
-        suggested_movies_count = len(participant_data['suggested-movies'])
+        suggested_movies_count = len(participant_data["suggested-movies"])
 
-        if participant_data['participation-count'] > 0:
-            participant_data['all-average-rating'] /= (participant_data['participation-count'] - suggested_movies_count)
+        if participant_data["participation-count"] > 0:
+            participant_data["all-average-rating"] /= (
+                participant_data["participation-count"] - suggested_movies_count
+            )
 
-            participant_data['critical-average-rating'] /= participant_data['participation-count']
+            participant_data["critical-average-rating"] /= participant_data[
+                "participation-count"
+            ]
 
         if suggested_movies_count > 0:
-            participant_data['received-average-rating'] /= suggested_movies_count
-        
+            participant_data["received-average-rating"] /= suggested_movies_count
+
         if suggested_movies_count > 0:
-            participant_data['bias-average-rating'] /= suggested_movies_count
-    
+            participant_data["bias-average-rating"] /= suggested_movies_count
+
     for movie_name, movie_data in main_sheet.items():
-        ratings = list(movie_data['individual-ratings'].values())
-        
+        ratings = list(movie_data["individual-ratings"].values())
+
         # Calculate standard deviation and range
-        movie_data['standard-deviation'] = statistics.stdev(ratings)
-        movie_data['rating-range'] = max(ratings) - min(ratings)
+        movie_data["standard-deviation"] = statistics.stdev(ratings)
+        movie_data["rating-range"] = max(ratings) - min(ratings)
 
     return main_sheet, participant_sheets
+
 
 def format_ouput_content(main_sheet, participant_sheets):
     output = "# Cinéfilos Processing Results\n\n---\n\n"
@@ -285,7 +315,9 @@ def format_ouput_content(main_sheet, participant_sheets):
     # Suggestion Metrics
     output += "### Most and Least Suggestions\n\n"
     output += "**Suggestions per person:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: len(x[1]['suggested-movies']))
+    sorted_items = sorted(
+        participant_sheets.items(), key=lambda x: len(x[1]["suggested-movies"])
+    )
     # Print each user with their suggestion count
     for person, data in sorted_items:
         output += f"- {person}: {len(data['suggested-movies'])} suggestions\n"
@@ -293,7 +325,9 @@ def format_ouput_content(main_sheet, participant_sheets):
     # Participation Metrics
     output += "\n---\n\n### Most and Least Participation\n\n"
     output += "**Participation per person:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['participation-count'])
+    sorted_items = sorted(
+        participant_sheets.items(), key=lambda x: x[1]["participation-count"]
+    )
     for person, data in sorted_items:
         output += f"- {person}: {data['participation-count']} participation\n"
 
@@ -301,32 +335,48 @@ def format_ouput_content(main_sheet, participant_sheets):
     output += "\n---\n\n## Voting Patterns and Preferences\n\n"
 
     # Average Rating Given Metrics
-    output += "### Average Rating Given by Each Person for all movies they've watched\n\n"
+    output += (
+        "### Average Rating Given by Each Person for all movies they've watched\n\n"
+    )
     output += "**Rating per person:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['all-average-rating'])
+    sorted_items = sorted(
+        participant_sheets.items(), key=lambda x: x[1]["all-average-rating"]
+    )
     for person, data in sorted_items:
         output += f"- {person}: {data['all-average-rating']:.2f} given average rating\n"
 
     # Average Rating Received Metrics
-    output += "\n---\n\n### Average (of average) Rating of selected movies by that person\n\n"
+    output += (
+        "\n---\n\n### Average (of average) Rating of selected movies by that person\n\n"
+    )
     output += "**Rating of selected movies:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['received-average-rating'])
+    sorted_items = sorted(
+        participant_sheets.items(), key=lambda x: x[1]["received-average-rating"]
+    )
     for person, data in sorted_items:
         output += f"- {person}: {data['received-average-rating']:.2f} received average rating\n"
 
     # Most Generous and Most Critical Viewers
     output += "\n---\n\n### Most Generous and Critical Viewers\n\n"
     output += "**Average rating given to movies of other people:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['critical-average-rating'])
+    sorted_items = sorted(
+        participant_sheets.items(), key=lambda x: x[1]["critical-average-rating"]
+    )
     for person, data in sorted_items:
-        output += f"- {person}: {data['critical-average-rating']:.2f} given average rating\n"
+        output += (
+            f"- {person}: {data['critical-average-rating']:.2f} given average rating\n"
+        )
 
     # Biased Ratings
     output += "\n---\n\n### Most Biased and Least Biased Viewers\n\n"
     output += "**Average rating given to own movies:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['bias-average-rating'])
+    sorted_items = sorted(
+        participant_sheets.items(), key=lambda x: x[1]["bias-average-rating"]
+    )
     for person, data in sorted_items:
-        output += f"- {person}: {data['bias-average-rating']:.2f} given average rating\n"
+        output += (
+            f"- {person}: {data['bias-average-rating']:.2f} given average rating\n"
+        )
 
     #  Section for Best and Worst Suggestions
     output += "\n---\n\n## Best and Worst Suggestions\n\n"
@@ -334,8 +384,8 @@ def format_ouput_content(main_sheet, participant_sheets):
     # Highest and Lowest Rated Movies
     output += "### Highest and Lowest Rated Movies\n\n"
     output += "**Average rating of each movie in order:**\n"
-    sorted_items = sorted(main_sheet.items(), key=lambda x: x[1]['average-rating'])
-    for index, (movie_name, movie_data) in enumerate(sorted_items):
+    sorted_items = sorted(main_sheet.items(), key=lambda x: x[1]["average-rating"])
+    for index, (_, movie_data) in enumerate(sorted_items):
         output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with an average rating of {movie_data['average-rating']:.2f}"
         if index == 0:
             output += " **the worst movie we watched...**\n"
@@ -344,14 +394,13 @@ def format_ouput_content(main_sheet, participant_sheets):
         else:
             output += "\n"
 
-
     #  Section for Controversy and Consensus
     output += "\n---\n\n## Controversy and Consensus\n\n"
 
     # Most Controversial & Consensual Movies
     output += "### Most Controversial Movies\n\n"
     output += "**List of  movies based on how much people agreed on their rating using standard deviation and rating range, from least to most:**\n"
-    sorted_items = sorted(main_sheet.items(), key=lambda x: x[1]['standard-deviation'])
+    sorted_items = sorted(main_sheet.items(), key=lambda x: x[1]["standard-deviation"])
     for index, (movie_name, movie_data) in enumerate(sorted_items):
         output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with standard deviation value of {movie_data['standard-deviation']:.2f} and rating range of {movie_data['rating-range']:.2f}"
         if index == 0:
@@ -363,12 +412,12 @@ def format_ouput_content(main_sheet, participant_sheets):
 
     #  Section for User-Specific Metrics
     output += "\n---\n\n## User-Specific Metrics\n\n"
-    
+
     # Personal Best/Worst Suggestions
     output += "### Personal Best/Worst Suggestions\n\n"
     for person, data in participant_sheets.items():
-        if data['best-suggestion'] is not None:
-            if data['worst-suggestion']['name'] != data['best-suggestion']['name']:
+        if data["best-suggestion"] is not None:
+            if data["worst-suggestion"]["name"] != data["best-suggestion"]["name"]:
                 output += f"- {person}: best suggestion: {data['best-suggestion']['name']}, worst suggestion: {data['worst-suggestion']['name']}\n"
             else:
                 output += f"- {person}: has only one suggestion: {data['best-suggestion']['name']}\n"
@@ -377,9 +426,10 @@ def format_ouput_content(main_sheet, participant_sheets):
 
     return output
 
+
 # Main function to preprocess and write details to the output file
-def main():    
-    year = initialize_config_and_return_arguments()
+def main():
+    year, generate_slide = initialize_config_and_return_arguments()
 
     script_dir = define_script_dir()
     main_sheet, participant_sheets = preprocess_spreadsheet(year, script_dir)
@@ -396,10 +446,14 @@ def main():
     # Print message to indicate the results were saved
     print(f"Analysis complete for the year {year}. Results saved to {md_output_path}")
 
-    # pptx_output_path = convert_to_slide(md_output_path, script_dir, year)
+    if generate_slide:
+        pptx_output_path = convert_to_slide(md_output_path, script_dir, year)
 
-    # # Print message to indicate the results were saved
-    # print(f"Analysis complete for the year {year}. Results saved to {pptx_output_path}")
+        # Print message to indicate the results were saved
+        print(
+            f"Analysis complete for the year {year}. Results saved to {pptx_output_path}"
+        )
+
 
 if __name__ == "__main__":
     main()
