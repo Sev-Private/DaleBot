@@ -109,3 +109,14 @@
 - Family Plan, suggested by Sev with standard deviation value of 1.50 and rating range of 3.00
 - The Other Lamb, suggested by Sand with standard deviation value of 1.67 and rating range of 4.00
 - Maxxxine, suggested by João with standard deviation value of 1.79 and rating range of 4.00 **the most controversial movie!**
+
+## User-Specific Metrics
+
+### Personal Best/Worst Suggestions
+
+- Sand: best suggestion: What Women Want, worst suggestion: The Other Lamb
+- Sev: best suggestion: Source code, worst suggestion: Family Plan
+- Baby: best suggestion: Hacksaw Ridge, worst suggestion: The Grand Budapest Hotel
+- Victor: best suggestion: Tolkien, worst suggestion: Old
+- João: best suggestion: Late night with the devil, worst suggestion: Maxxxine
+- Átila: has no suggestions

@@ -135,12 +135,13 @@ def preprocess_spreadsheet(year, script_dir):
         participant_sheets[participant_name] = {
             'csv': filtered_rows,
             'suggested-movies': [],
-            'suggestion-count': 0,
             'participation-count': 0,
             'all-average-rating': 0,
             'received-average-rating': 0,
             'critical-average-rating': 0,
             'bias-average-rating': 0,
+            'worst-suggestion': None,
+            'best-suggestion': None,
         }
     return filtered_main_sheet, participant_sheets
 
@@ -148,9 +149,20 @@ def process_data(main_sheet, participant_sheets):
     # Track suggestions and ratings
     for movie_name, movie_row_data in main_sheet.items():
         suggester = movie_row_data['suggester']
-        participant_sheets[suggester]['suggestion-count'] += 1
-        participant_sheets[suggester]['received-average-rating'] += movie_row_data['average-rating']
-        participant_sheets[suggester]['suggested-movies'].append(movie_row_data['name'])
+        movie_name = movie_row_data['name']
+        movie_average_rating = movie_row_data['average-rating']
+        participant_sheets[suggester]['received-average-rating'] += movie_average_rating
+        participant_sheets[suggester]['suggested-movies'].append(movie_name)
+
+        new_movie_item = {
+                'name': movie_name,
+                'rating': movie_average_rating
+            }
+        if participant_sheets[suggester]['best-suggestion'] is None or participant_sheets[suggester]['best-suggestion']['rating'] < movie_average_rating:
+            participant_sheets[suggester]['best-suggestion'] = new_movie_item.copy()
+        
+        if participant_sheets[suggester]['worst-suggestion'] is None or participant_sheets[suggester]['worst-suggestion']['rating'] > movie_average_rating:
+            participant_sheets[suggester]['worst-suggestion'] = new_movie_item.copy()
 
     # Process ratings
     for participant_name, participant_data in participant_sheets.items():
@@ -204,10 +216,10 @@ def format_ouput_content(main_sheet, participant_sheets):
     # Suggestion Metrics
     output += "### Most and Least Suggestions\n\n"
     output += "**Suggestions per person:**\n"
-    sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['suggestion-count'])
+    sorted_items = sorted(participant_sheets.items(), key=lambda x: len(x[1]['suggested-movies']))
     # Print each user with their suggestion count
     for person, data in sorted_items:
-        output += f"- {person}: {data['suggestion-count']} suggestions\n"
+        output += f"- {person}: {len(data['suggested-movies'])} suggestions\n"
 
     # Participation Metrics
     output += "\n### Most and Least Participation\n\n"
@@ -279,6 +291,21 @@ def format_ouput_content(main_sheet, participant_sheets):
             output += " **the most controversial movie!**\n"
         else:
             output += "\n"
+
+
+    #  Section for User-Specific Metrics
+    output += "\n## User-Specific Metrics\n\n"
+    
+    # Personal Best/Worst Suggestions
+    output += "### Personal Best/Worst Suggestions\n\n"
+    for person, data in participant_sheets.items():
+        if data['best-suggestion'] is not None:
+            if data['worst-suggestion']['name'] != data['best-suggestion']['name']:
+                output += f"- {person}: best suggestion: {data['best-suggestion']['name']}, worst suggestion: {data['worst-suggestion']['name']}\n"
+            else:
+                output += f"- {person}: has only one suggestion: {data['best-suggestion']['name']}\n"
+        else:
+            output += f"- {person}: has no suggestions\n"
 
     return output
 

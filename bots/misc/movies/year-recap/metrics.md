@@ -69,12 +69,6 @@ This project provides a set of metrics and insights to analyze the movie ratings
 
 ## User-Specific Metrics
 
-16. **Total Number of Movies Watched**  
-    Count the number of movies each person has watched (i.e., the number of non-empty ratings they provided).
-
-17. **Average Rating for Each User**  
-    Calculate the average rating for each person across all movies they rated. This provides insight into their general sentiment towards the movies.
-
 18. **Highest Rated Movie**  
     Identify the movie that a person rated the highest.
 
