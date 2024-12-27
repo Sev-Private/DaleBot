@@ -7,14 +7,15 @@ from datetime import datetime
 import sys
 import argparse
 import statistics
+import re
+import requests
+from dotenv import load_dotenv
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import csv
+import requests_cache
 import pprint
 
-# Define constants for the Google Sheets URL and credentials file
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1jnZHVMXvRCZFQDtwj-KazYPjniA-Vit8Rl0Z_sHHpRc/"  # Replace with your Google Sheets URL
-CREDENTIALS_JSON = "my_credentials.json"  # Replace with the path to your credentials JSON file
+IMDB_REQUEST_LINK = "http://www.omdbapi.com/?i=tt3896198&apikey=fdd65410"
 
 def initialize_config_and_return_arguments():
      # This works in systems where Portuguese locale is available
@@ -25,6 +26,10 @@ def initialize_config_and_return_arguments():
     parser = argparse.ArgumentParser(description="Process spreadsheet and extract data.")
     parser.add_argument('year', type=int, help="The year for which to run the analysis")
     args = parser.parse_args()
+
+    load_dotenv()
+
+    requests_cache.install_cache('api_cache', expire_after=43200)
     
     return args.year
 
@@ -79,14 +84,74 @@ def write_to_output_file(year, script_dir, content):
     
     return output_path
 
+def fetch_imdb_movie_data(imdb_link):
+
+    match = re.search(r"/title/(tt\d+)/", imdb_link)
+    if match:
+        imdb_id = match.group(1)
+    else:
+        print("No IMDb ID found.")
+        return None
+
+    base_url = "http://www.omdbapi.com/"
+    params = {
+        'apikey': os.getenv("IMDB_API_KEY"),
+        'i': imdb_id,  # Search by IMDb ID
+    }
+    # Remove None values to avoid conflicts
+    params = {k: v for k, v in params.items() if v is not None}
+
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data.get('Response') == 'True':
+            return data
+        else:
+            print(f"Error: {data.get('Error')}")
+            return None
+    else:
+        print(f"HTTP Error: {response.status_code}")
+        return None
+
+# def convert_to_slide(md_file, script_dir, year):
+#     # Read the Markdown file
+#     with open(md_file, 'r') as f:
+#         lines = f.readlines()
+
+#     # Initialize a presentation
+#     prs = Presentation()
+#     slide = None
+
+#     for line in lines:
+#         if line.strip() == "---":  # Slide delimiter
+#             slide = None
+#         elif slide is None:  # Create a new slide
+#             slide = prs.slides.add_slide(prs.slide_layouts[1])
+#             title_placeholder = slide.shapes.title
+#             title_placeholder.text = line.strip()  # Set title
+#         else:  # Add content to slide
+#             content_placeholder = slide.placeholders[1]
+#             content_placeholder.text += line.strip() + "\n"
+
+#     # Define the output file name with the year
+#     output_file = f"analysis_results_{year}.pptx"
+
+#     # Write details to the output file
+#     output_path = os.path.join(script_dir, output_file)
+    
+#     # Save the presentation
+#     prs.save(output_path)
+
+#     return output_path
+
 def preprocess_spreadsheet(year, script_dir):
-    credentials_json = os.path.join(script_dir, CREDENTIALS_JSON)
+    credentials_json = os.path.join(script_dir, os.getenv("CREDENTIALS_JSON"))
 
     # Authenticate and get the client
     client = authenticate_google_sheets(credentials_json)
 
     # Open the spreadsheet
-    spreadsheet = client.open_by_url(SHEET_URL)
+    spreadsheet = client.open_by_url(os.getenv("SHEET_URL"))
     
     # Extract the main file (first sheet)
     main_sheet = spreadsheet.get_worksheet(0)
@@ -98,23 +163,27 @@ def preprocess_spreadsheet(year, script_dir):
     filtered_main_sheet = {}
     for row in rows[1:]:  # Skipping the header
         columns = row.split(";")
-        if columns[0] == '':
+        movie_name = columns[0]
+        imdb_link = columns[1]
+        if movie_name == '':
             break
         if len(columns) > 2:  # Ensure there is a date column
             try:
                 date_watched = datetime.strptime(columns[2], "%d/%b./%Y")
                 if date_watched.year == year:
-                    filtered_movies.append(columns[0])  # Add movie name to the filtered list
-                    filtered_main_sheet[columns[0]] = {
-                        'name': columns[0],
-                        'imdb-link': columns[1],
+                    filtered_movies.append(movie_name)  # Add movie name to the filtered list
+                    filtered_main_sheet[movie_name] = {
+                        'name': movie_name,
+                        'imdb-link': imdb_link,
                         'suggester': set_participant_aliases(columns[3]),
                         'average-rating': locale.atof(columns[4]),
                         'individual-ratings': {},
                         'standard-deviation': 0,
                         'rating-range': 0,
-                    } # Add movie name to the main sheet file
+                        'imdb-data': fetch_imdb_movie_data(imdb_link)
+                    }
             except ValueError:
+                print("ERROR: please check this before continuing")
                 continue  # Skip if the date is invalid or in the wrong format
     
     # Extract participant sheets with filter
@@ -208,7 +277,7 @@ def process_data(main_sheet, participant_sheets):
     return main_sheet, participant_sheets
 
 def format_ouput_content(main_sheet, participant_sheets):
-    output = "# Cinéfilos Processing Results\n\n"
+    output = "# Cinéfilos Processing Results\n\n---\n\n"
 
     # Section for Suggestion and Participation
     output += "## Suggestion and Participation Metrics\n\n"
@@ -222,14 +291,14 @@ def format_ouput_content(main_sheet, participant_sheets):
         output += f"- {person}: {len(data['suggested-movies'])} suggestions\n"
 
     # Participation Metrics
-    output += "\n### Most and Least Participation\n\n"
+    output += "\n---\n\n### Most and Least Participation\n\n"
     output += "**Participation per person:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['participation-count'])
     for person, data in sorted_items:
         output += f"- {person}: {data['participation-count']} participation\n"
 
     #  Section for Voting Patterns and Preferences
-    output += "\n## Voting Patterns and Preferences\n\n"
+    output += "\n---\n\n## Voting Patterns and Preferences\n\n"
 
     # Average Rating Given Metrics
     output += "### Average Rating Given by Each Person for all movies they've watched\n\n"
@@ -239,28 +308,28 @@ def format_ouput_content(main_sheet, participant_sheets):
         output += f"- {person}: {data['all-average-rating']:.2f} given average rating\n"
 
     # Average Rating Received Metrics
-    output += "\n### Average (of average) Rating of selected movies by that person\n\n"
+    output += "\n---\n\n### Average (of average) Rating of selected movies by that person\n\n"
     output += "**Rating of selected movies:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['received-average-rating'])
     for person, data in sorted_items:
         output += f"- {person}: {data['received-average-rating']:.2f} received average rating\n"
 
     # Most Generous and Most Critical Viewers
-    output += "\n### Most Generous and Critical Viewers\n\n"
+    output += "\n---\n\n### Most Generous and Critical Viewers\n\n"
     output += "**Average rating given to movies of other people:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['critical-average-rating'])
     for person, data in sorted_items:
         output += f"- {person}: {data['critical-average-rating']:.2f} given average rating\n"
 
     # Biased Ratings
-    output += "\n### Most Biased and Least Biased Viewers\n\n"
+    output += "\n---\n\n### Most Biased and Least Biased Viewers\n\n"
     output += "**Average rating given to own movies:**\n"
     sorted_items = sorted(participant_sheets.items(), key=lambda x: x[1]['bias-average-rating'])
     for person, data in sorted_items:
         output += f"- {person}: {data['bias-average-rating']:.2f} given average rating\n"
 
     #  Section for Best and Worst Suggestions
-    output += "\n## Best and Worst Suggestions\n\n"
+    output += "\n---\n\n## Best and Worst Suggestions\n\n"
 
     # Highest and Lowest Rated Movies
     output += "### Highest and Lowest Rated Movies\n\n"
@@ -277,7 +346,7 @@ def format_ouput_content(main_sheet, participant_sheets):
 
 
     #  Section for Controversy and Consensus
-    output += "\n## Controversy and Consensus\n\n"
+    output += "\n---\n\n## Controversy and Consensus\n\n"
 
     # Most Controversial & Consensual Movies
     output += "### Most Controversial Movies\n\n"
@@ -292,9 +361,8 @@ def format_ouput_content(main_sheet, participant_sheets):
         else:
             output += "\n"
 
-
     #  Section for User-Specific Metrics
-    output += "\n## User-Specific Metrics\n\n"
+    output += "\n---\n\n## User-Specific Metrics\n\n"
     
     # Personal Best/Worst Suggestions
     output += "### Personal Best/Worst Suggestions\n\n"
@@ -323,10 +391,15 @@ def main():
 
     content = format_ouput_content(processed_main, processed_participant)
 
-    output_path =  write_to_output_file(year, script_dir, content)
+    md_output_path = write_to_output_file(year, script_dir, content)
 
     # Print message to indicate the results were saved
-    print(f"Analysis complete for the year {year}. Results saved to {output_path}")
+    print(f"Analysis complete for the year {year}. Results saved to {md_output_path}")
+
+    # pptx_output_path = convert_to_slide(md_output_path, script_dir, year)
+
+    # # Print message to indicate the results were saved
+    # print(f"Analysis complete for the year {year}. Results saved to {pptx_output_path}")
 
 if __name__ == "__main__":
     main()

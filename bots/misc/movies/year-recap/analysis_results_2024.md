@@ -1,5 +1,7 @@
 # Cinéfilos Processing Results
 
+---
+
 ## Suggestion and Participation Metrics
 
 ### Most and Least Suggestions
@@ -12,6 +14,8 @@
 - João: 3 suggestions
 - Victor: 6 suggestions
 
+---
+
 ### Most and Least Participation
 
 **Participation per person:**
@@ -21,6 +25,8 @@
 - Baby: 17 participation
 - Victor: 17 participation
 - João: 17 participation
+
+---
 
 ## Voting Patterns and Preferences
 
@@ -34,6 +40,8 @@
 - João: 4.79 given average rating
 - Victor: 5.55 given average rating
 
+---
+
 ### Average (of average) Rating of selected movies by that person
 
 **Rating of selected movies:**
@@ -43,6 +51,8 @@
 - Sand: 3.72 received average rating
 - Victor: 3.75 received average rating
 - Baby: 3.80 received average rating
+
+---
 
 ### Most Generous and Critical Viewers
 
@@ -54,6 +64,8 @@
 - Baby: 2.53 given average rating
 - João: 3.12 given average rating
 
+---
+
 ### Most Biased and Least Biased Viewers
 
 **Average rating given to own movies:**
@@ -63,6 +75,8 @@
 - Baby: 4.33 given average rating
 - João: 4.67 given average rating
 - Sand: 5.00 given average rating
+
+---
 
 ## Best and Worst Suggestions
 
@@ -87,6 +101,8 @@
 - Shutter Island, suggested by Victor with an average rating of 4.80
 - Tolkien, suggested by Victor with an average rating of 5.00 **won GOTY of the year!**
 
+---
+
 ## Controversy and Consensus
 
 ### Most Controversial Movies
@@ -109,6 +125,8 @@
 - Family Plan, suggested by Sev with standard deviation value of 1.50 and rating range of 3.00
 - The Other Lamb, suggested by Sand with standard deviation value of 1.67 and rating range of 4.00
 - Maxxxine, suggested by João with standard deviation value of 1.79 and rating range of 4.00 **the most controversial movie!**
+
+---
 
 ## User-Specific Metrics
 
