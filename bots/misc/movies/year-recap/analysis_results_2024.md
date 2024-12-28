@@ -19,12 +19,12 @@
 ### Most and Least Participation
 
 **Participation per person:**
-- Átila: 1 participation
-- Sev: 11 participation
-- Sand: 14 participation
-- Baby: 17 participation
-- Victor: 17 participation
-- João: 17 participation
+- Átila: 1 participations
+- Sev: 11 participations
+- Sand: 14 participations
+- Baby: 17 participations
+- Victor: 17 participations
+- João: 17 participations
 
 ---
 
@@ -137,4 +137,16 @@
 - Baby: best suggestion: Hacksaw Ridge, worst suggestion: The Grand Budapest Hotel
 - Victor: best suggestion: Tolkien, worst suggestion: Old
 - João: best suggestion: Late night with the devil, worst suggestion: Maxxxine
+- Átila: has no suggestions
+
+---
+
+### Suggesters' Impact on the Group's Average Rating
+
+**List of  movies based on how much someone's suggestion affect the gorup average, the higher the number, the better received their movies are, the lower, means it usually affects the average to go down:**
+- João: Average rating of their suggested movies:: 2.45, Impact on group's overall average: -0.96
+- Sev: Average rating of their suggested movies:: 2.83, Impact on group's overall average: -0.59
+- Sand: Average rating of their suggested movies:: 3.72, Impact on group's overall average: 0.30
+- Victor: Average rating of their suggested movies:: 3.75, Impact on group's overall average: 0.34
+- Baby: Average rating of their suggested movies:: 3.80, Impact on group's overall average: 0.39
 - Átila: has no suggestions

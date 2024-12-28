@@ -225,18 +225,24 @@ def preprocess_spreadsheet(year, script_dir):
             "bias-average-rating": 0,
             "worst-suggestion": None,
             "best-suggestion": None,
+            "average-ratings": [],
+            "mean-average-rating": None,
+            "impact-on-group-mean-average": None,
         }
     return filtered_main_sheet, participant_sheets
 
 
 def process_data(main_sheet, participant_sheets):
     # Track suggestions and ratings
+    all_movie_average_ratings = []
     for movie_name, movie_row_data in main_sheet.items():
         suggester = movie_row_data["suggester"]
         movie_name = movie_row_data["name"]
         movie_average_rating = movie_row_data["average-rating"]
+        all_movie_average_ratings.append(movie_average_rating)
         participant_sheets[suggester]["received-average-rating"] += movie_average_rating
         participant_sheets[suggester]["suggested-movies"].append(movie_name)
+        participant_sheets[suggester]["average-ratings"].append(movie_average_rating)
 
         new_movie_item = {"name": movie_name, "rating": movie_average_rating}
         if (
@@ -253,8 +259,18 @@ def process_data(main_sheet, participant_sheets):
         ):
             participant_sheets[suggester]["worst-suggestion"] = new_movie_item.copy()
 
+    overall_group_average = statistics.mean(all_movie_average_ratings)
+
     # Process ratings
     for participant_name, participant_data in participant_sheets.items():
+        if participant_data["average-ratings"]:
+            participant_data["mean-average-rating"] = statistics.mean(
+                participant_data["average-ratings"]
+            )
+            participant_data["impact-on-group-mean-average"] = (
+                participant_data["mean-average-rating"] - overall_group_average
+            )
+
         for participant_movie_data in participant_data["csv"]:
             participant_rating = participant_movie_data["rating"]
 
@@ -329,7 +345,7 @@ def format_ouput_content(main_sheet, participant_sheets):
         participant_sheets.items(), key=lambda x: x[1]["participation-count"]
     )
     for person, data in sorted_items:
-        output += f"- {person}: {data['participation-count']} participation\n"
+        output += f"- {person}: {data['participation-count']} participations\n"
 
     #  Section for Voting Patterns and Preferences
     output += "\n---\n\n## Voting Patterns and Preferences\n\n"
@@ -421,6 +437,19 @@ def format_ouput_content(main_sheet, participant_sheets):
                 output += f"- {person}: best suggestion: {data['best-suggestion']['name']}, worst suggestion: {data['worst-suggestion']['name']}\n"
             else:
                 output += f"- {person}: has only one suggestion: {data['best-suggestion']['name']}\n"
+        else:
+            output += f"- {person}: has no suggestions\n"
+
+    # Suggesters' Impact on the Group's Average Rating
+    output += "\n---\n\n### Suggesters' Impact on the Group's Average Rating\n\n"
+    output += "**List of  movies based on how much someone's suggestion affect the gorup average, the higher the number, the better received their movies are, the lower, means it usually affects the average to go down:**\n"
+    sorted_items = sorted(
+        participant_sheets.items(),
+        key=lambda x: (x[1].get("impact-on-group-mean-average") or float("inf")),
+    )
+    for person, data in sorted_items:
+        if data["impact-on-group-mean-average"] is not None:
+            output += f"- {person}: Average rating of their suggested movies:: {data['mean-average-rating']:.2f}, Impact on group's overall average: {data['impact-on-group-mean-average']:.2f}\n"
         else:
             output += f"- {person}: has no suggestions\n"
 

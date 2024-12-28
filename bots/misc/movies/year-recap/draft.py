@@ -435,6 +435,136 @@ def suggesters_impact_on_group_avg(main_df, df_list):
     
     return suggester_impact
 
+
+To implement the analysis of Suggesters' Impact on the Group's Average Rating, we need to calculate how each person's movie suggestions influence the overall group's average rating. This involves comparing the average ratings of movies suggested by each person to the overall group's average rating.
+
+Steps to Implement
+1. Calculate the Overall Average Rating
+The overall group average rating can be computed by taking the average of all movie ratings from all participants.
+
+2. Calculate the Average Rating for Each Suggester
+For each person who suggests a movie, calculate the average rating of the movies they suggest.
+
+3. Compare Each Suggester's Average Rating to the Group's Average Rating
+To measure the impact of each suggester's choices, compare the average ratings of the movies they suggested to the overall group average rating. A suggester who consistently suggests highly-rated movies may increase the group’s average, while one who suggests lower-rated movies may decrease it.
+
+Implementation Outline
+We can implement this in Python by iterating over the data and calculating the relevant averages.
+
+1. Calculate Overall Group Rating
+This is simply the average of the average ratings for all movies.
+
+2. Calculate Suggester's Impact
+For each suggester:
+
+Find the average rating of movies they have suggested.
+Compare this to the group’s overall average.
+3. Example Code
+Here is how you can implement it:
+
+python
+Copiar código
+import statistics
+
+# Sample data structure (you might have this already from the previous part)
+movies = {
+    '1408': {
+        'average-rating': 4.0,
+        'suggester': 'Victor',
+        'individual-ratings': {'Baby': 4, 'João': 3, 'Sev': 3, 'Victor': 4}
+    },
+    'Blood And Gold': {
+        'average-rating': 4.25,
+        'suggester': 'Sand',
+        'individual-ratings': {'Baby': 4, 'João': 5, 'Sand': 5, 'Victor': 3}
+    },
+    'Family Plan': {
+        'average-rating': 2.25,
+        'suggester': 'Sev',
+        'individual-ratings': {'Baby': 4, 'João': 1, 'Sand': 1, 'Victor': 3}
+    },
+    # Add more movies as needed
+}
+
+# Step 1: Calculate the overall group's average rating
+def calculate_overall_average(movies):
+    all_ratings = []
+    for movie in movies.values():
+        all_ratings.append(movie['average-rating'])
+    return statistics.mean(all_ratings)
+
+# Step 2: Calculate each suggester's average rating
+def calculate_suggester_impact(movies, overall_average):
+    suggester_ratings = {}
+    for movie in movies.values():
+        suggester = movie['suggester']
+        movie_avg_rating = movie['average-rating']
+        
+        if suggester not in suggester_ratings:
+            suggester_ratings[suggester] = []
+        suggester_ratings[suggester].append(movie_avg_rating)
+    
+    suggester_impact = {}
+    for suggester, ratings in suggester_ratings.items():
+        suggester_avg = statistics.mean(ratings)
+        impact = suggester_avg - overall_average
+        suggester_impact[suggester] = {
+            'average-rating': suggester_avg,
+            'impact-on-group-average': impact
+        }
+    
+    return suggester_impact
+
+# Step 3: Display the impact of each suggester
+def display_suggester_impact(suggester_impact):
+    for suggester, data in suggester_impact.items():
+        print(f"Suggester: {suggester}")
+        print(f"  Average rating of their suggested movies: {data['average-rating']}")
+        print(f"  Impact on group's overall average: {data['impact-on-group-average']:.2f}")
+        print()
+
+# Main function
+def main():
+    overall_average = calculate_overall_average(movies)
+    suggester_impact = calculate_suggester_impact(movies, overall_average)
+    display_suggester_impact(suggester_impact)
+
+if __name__ == "__main__":
+    main()
+Explanation:
+calculate_overall_average(movies):
+
+Loops through all movies and extracts the average-rating for each.
+Returns the mean of all movie average ratings as the overall group rating.
+calculate_suggester_impact(movies, overall_average):
+
+For each movie, the suggester is identified and their movie's average rating is added to a list of ratings for that suggester.
+The average rating of each suggester’s movies is calculated.
+The impact of each suggester is determined by subtracting the overall group average from the suggester's average rating.
+display_suggester_impact(suggester_impact):
+
+Displays the suggester’s average rating for their movies and the impact their suggestions had on the group’s overall average rating.
+Example Output:
+For the above example, the output might look like:
+
+vbnet
+Copiar código
+Suggester: Victor
+  Average rating of their suggested movies: 4.125
+  Impact on group's overall average: 0.25
+
+Suggester: Sand
+  Average rating of their suggested movies: 4.25
+  Impact on group's overall average: 0.375
+
+Suggester: Sev
+  Average rating of their suggested movies: 2.25
+  Impact on group's overall average: -1.0
+Analysis Interpretation:
+The impact represents how much the suggester’s choices increase or decrease the overall group average.
+A positive impact means the suggester is picking movies that tend to have higher ratings, boosting the group average.
+A negative impact means the suggester's picks tend to lower the group’s average.
+
 # Example usage with the main dataframe (main_df) and a dictionary of user dataframes (df_list)
 suggester_impact = suggesters_impact_on_group_avg(main_df, user_dfs)
 
