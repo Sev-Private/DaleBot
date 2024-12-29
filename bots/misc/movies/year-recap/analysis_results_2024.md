@@ -84,22 +84,157 @@
 
 **Average rating of each movie in order:**
 - Maxxxine, suggested by João with an average rating of 1.80 **the worst movie we watched...**
+	- On Internet Movie Database
+		- The equivalent rating is 3.15
+		- The rating difference is 1.35, we hated it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 3.60
+		- The rating difference is 1.80, we hated it more than them
 - Family Plan, suggested by Sev with an average rating of 2.25
+	- On Rotten Tomatoes
+		- The equivalent rating is 1.35
+		- The rating difference is -0.90, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.15
+		- The rating difference is 0.90, we hated it more than them
 - Old, suggested by Victor with an average rating of 2.25
+	- On Rotten Tomatoes
+		- The equivalent rating is 2.50
+		- The rating difference is 0.25, we hated it more than them
+	- On Metacritic
+		- The equivalent rating is 2.75
+		- The rating difference is 0.50, we hated it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 2.90
+		- The rating difference is 0.65, we hated it more than them
 - The Other Lamb, suggested by Sand with an average rating of 2.40
+	- On Internet Movie Database
+		- The equivalent rating is 2.65
+		- The rating difference is 0.25, we hated it more than them
+	- On Metacritic
+		- The equivalent rating is 3.20
+		- The rating difference is 0.80, we hated it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 3.70
+		- The rating difference is 1.30, we hated it more than them
 - Oldboy, suggested by João with an average rating of 2.75
+	- On Metacritic
+		- The equivalent rating is 3.90
+		- The rating difference is 1.15, we hated it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 4.10
+		- The rating difference is 1.35, we hated it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 4.15
+		- The rating difference is 1.40, we hated it more than them
 - Late night with the devil, suggested by João with an average rating of 2.80
+	- On Internet Movie Database
+		- The equivalent rating is 3.50
+		- The rating difference is 0.70, we hated it more than them
+	- On Metacritic
+		- The equivalent rating is 3.60
+		- The rating difference is 0.80, we hated it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 4.85
+		- The rating difference is 2.05, we hated it more than them
 - The Grand Budapest Hotel, suggested by Baby with an average rating of 3.00
+	- On Internet Movie Database
+		- The equivalent rating is 4.05
+		- The rating difference is 1.05, we hated it more than them
+	- On Metacritic
+		- The equivalent rating is 4.40
+		- The rating difference is 1.40, we hated it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 4.60
+		- The rating difference is 1.60, we hated it more than them
 - Red One, suggested by Victor with an average rating of 3.20
+	- On Rotten Tomatoes
+		- The equivalent rating is 1.50
+		- The rating difference is -1.70, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.45
+		- The rating difference is 0.25, we hated it more than them
 - The Watchers, suggested by Victor with an average rating of 3.25
+	- On Rotten Tomatoes
+		- The equivalent rating is 1.60
+		- The rating difference is -1.65, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 2.85
+		- The rating difference is -0.40, we liked it more than them
 - Source code, suggested by Sev with an average rating of 3.40
+	- On Metacritic
+		- The equivalent rating is 3.70
+		- The rating difference is 0.30, we hated it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.75
+		- The rating difference is 0.35, we hated it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 4.60
+		- The rating difference is 1.20, we hated it more than them
 - The Count of Monte Cristo, suggested by Baby with an average rating of 4.00
+	- On Metacritic
+		- The equivalent rating is 3.05
+		- The rating difference is -0.95, we liked it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 3.70
+		- The rating difference is -0.30, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.85
+		- The rating difference is -0.15, we liked it more than them
 - 1408, suggested by Victor with an average rating of 4.00
+	- On Metacritic
+		- The equivalent rating is 3.20
+		- The rating difference is -0.80, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.40
+		- The rating difference is -0.60, we liked it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 3.95
+		- The rating difference is -0.05, we liked it more than them
 - Blood And Gold, suggested by Sand with an average rating of 4.25
+	- On Internet Movie Database
+		- The equivalent rating is 3.25
+		- The rating difference is -1.00, we liked it more than them
 - Hacksaw Ridge, suggested by Baby with an average rating of 4.40
+	- On Metacritic
+		- The equivalent rating is 3.55
+		- The rating difference is -0.85, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 4.05
+		- The rating difference is -0.35, we liked it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 4.20
+		- The rating difference is -0.20, we liked it more than them
 - What Women Want, suggested by Sand with an average rating of 4.50
+	- On Metacritic
+		- The equivalent rating is 2.35
+		- The rating difference is -2.15, we liked it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 2.70
+		- The rating difference is -1.80, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.25
+		- The rating difference is -1.25, we liked it more than them
 - Shutter Island, suggested by Victor with an average rating of 4.80
+	- On Metacritic
+		- The equivalent rating is 3.15
+		- The rating difference is -1.65, we liked it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 3.45
+		- The rating difference is -1.35, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 4.10
+		- The rating difference is -0.70, we liked it more than them
 - Tolkien, suggested by Victor with an average rating of 5.00 **won GOTY of the year!**
+	- On Metacritic
+		- The equivalent rating is 2.40
+		- The rating difference is -2.60, we liked it more than them
+	- On Rotten Tomatoes
+		- The equivalent rating is 2.55
+		- The rating difference is -2.45, we liked it more than them
+	- On Internet Movie Database
+		- The equivalent rating is 3.40
+		- The rating difference is -1.60, we liked it more than them
 
 ---
 

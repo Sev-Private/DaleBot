@@ -15,7 +15,6 @@ import requests_cache
 from dotenv import load_dotenv
 from oauth2client.service_account import ServiceAccountCredentials
 
-
 def initialize_config_and_return_arguments():
     # This works in systems where Portuguese locale is available
     locale.setlocale(locale.LC_TIME, "pt_BR.UTF-8")
@@ -54,7 +53,6 @@ def authenticate_google_sheets(credentials_json):
     client = gspread.authorize(creds)
 
     return client
-
 
 # Function to export a worksheet to a CSV string
 def export_to_csv(worksheet):
@@ -130,6 +128,52 @@ def fetch_imdb_movie_data(imdb_link):
         print(f"HTTP Error: {response.status_code}")
         return None
 
+
+def convert_to_five_star(value):
+    """
+    Converts a single rating to a 5-star equivalent based on its source and value.
+    
+    Parameters:
+        rating (dict): A dictionary containing the source and value of the rating.
+        
+    Returns:
+        float: The converted 5-star equivalent of the rating.
+    """
+    
+    # Metacritic rating (e.g., '47/100')
+    if '/100' in value:
+        try:
+            # Convert Metacritic rating out of 100 to 5-star equivalent
+            numeric_value = float(value.split('/')[0])
+            five_star_rating = (numeric_value / 20)  # Convert to 5-star scale
+            return five_star_rating
+        except ValueError:
+            return None
+        
+    # IMDb rating (e.g., '6.5/10')
+    elif '/10' in value:
+        try:
+            # Convert IMDb rating out of 10 to 5-star equivalent
+            numeric_value = float(value.split('/')[0])
+            five_star_rating = (numeric_value / 10) * 5
+            return five_star_rating
+        except ValueError:
+            return None
+
+    # Rotten Tomatoes rating (e.g., '54%')
+    elif '%' in value:
+        try:
+            # Convert percentage rating to 5-star equivalent
+            numeric_value = float(value.replace('%', ''))
+            five_star_rating = (numeric_value / 20)  # Convert to 5-star scale
+            return five_star_rating
+        except ValueError:
+            return None
+
+    # Handle unknown rating format
+    else:
+        print("ERROR: check this new type of value that was not mapped")
+        return None
 
 def convert_to_slide(md_file, script_dir, year):
     # Define the output file name with the year
@@ -243,6 +287,17 @@ def process_data(main_sheet, participant_sheets):
         participant_sheets[suggester]["received-average-rating"] += movie_average_rating
         participant_sheets[suggester]["suggested-movies"].append(movie_name)
         participant_sheets[suggester]["average-ratings"].append(movie_average_rating)
+
+
+        imdb_data = movie_row_data['imdb-data']
+
+        if imdb_data:
+            for rating in movie_row_data['imdb-data']['Ratings']:
+                equivalency = convert_to_five_star(rating['Value'])
+                rating['group-equivalency-rating'] = equivalency
+                rating['group-discrepancy-rating'] = equivalency - movie_average_rating
+        else:
+            print(f"Error: {movie_name} has no imdb data, fix before continuing")
 
         new_movie_item = {"name": movie_name, "rating": movie_average_rating}
         if (
@@ -404,11 +459,30 @@ def format_ouput_content(main_sheet, participant_sheets):
     for index, (_, movie_data) in enumerate(sorted_items):
         output += f"- {movie_data['name']}, suggested by {movie_data['suggester']} with an average rating of {movie_data['average-rating']:.2f}"
         if index == 0:
-            output += " **the worst movie we watched...**\n"
+            output += " **the worst movie we watched...**"
         elif index == len(sorted_items) - 1:
-            output += " **won GOTY of the year!**\n"
-        else:
-            output += "\n"
+            output += " **won GOTY of the year!**"
+        
+        extra_ratings = movie_data['imdb-data']['Ratings']
+        if extra_ratings:
+            for rating in sorted(extra_ratings, key=lambda x: x['group-equivalency-rating']):
+                group_equivalency = rating['group-equivalency-rating']
+                group_difference = rating['group-discrepancy-rating']
+                if group_equivalency:
+                    output += f"\n\t- On {rating['Source']}"
+                output += f"\n\t\t- The equivalent rating is {group_equivalency:.2f}"
+                additional_context = ""
+                if group_difference < 0:
+                    additional_context = "we liked it more than them"
+                elif group_difference > 0:
+                    additional_context = "we hated it more than them"
+                else:
+                    additional_context = "same note"
+                output += f"\n\t\t- The rating difference is {group_difference:.2f}, {additional_context}"
+        
+        output += "\n"
+
+
 
     #  Section for Controversy and Consensus
     output += "\n---\n\n## Controversy and Consensus\n\n"
