@@ -8,8 +8,8 @@ const {
   VoiceConnectionStatus
 } = require('@discordjs/voice')
 const Bot = require('./bot.js')
-const ytdl = require('ytdl-core')
-const fs = require('fs');
+const ytdl = require('@distube/ytdl-core')
+const fs = require('fs')
 
 class AudioBot extends Bot {
   constructor (client, command) {
@@ -17,34 +17,54 @@ class AudioBot extends Bot {
     this.player = createAudioPlayer()
   }
 
-  sendVoiceMessage (message, url) {
+  sendVoiceMessage(message, url) {
+    
+    if (message.member.voice.channel == null) {
+      this.sendTextMessage(message, "Conecta num canal de audio primeiro doidão")
+      return
+    }
+
     const connection = joinVoiceChannel({
       channelId: message.member.voice.channel.id,
       guildId: message.guild.id,
       adapterCreator: message.guild.voiceAdapterCreator
     })
 
-    entersState(connection, VoiceConnectionStatus.Ready, 30e3)
-
     if (url.includes('youtube.com')) {
-      // url = ytdl(url)
-      ytdl('https://www.youtube.com/watch?v=EnLNDuKya04', { filter: 'audioonly' })
-      .pipe(fs.createWriteStream('audio.mp3'))
-      .on('error', console.error);
+      url = ytdl(url, {
+        filter: 'audioonly',
+        highWaterMark: 1 << 25, // Increase buffer size to avoid premature end
+        dlChunkSize: 0 // Stream directly without chunking
+      })
     }
+    
+    const audioResource = createAudioResource(url, { inlineVolume: true })
 
-    console.log(url)
+    const player = createAudioPlayer()
 
-    const resource = createAudioResource(url,
-      {
-        inputType: StreamType.Arbitrary
+    entersState(connection, VoiceConnectionStatus.Ready, 30000)
+      .then(() => {
+        player.stop()
+        connection.subscribe(player)
+        player.play(audioResource)
+      })
+      .catch(error => {
+        console.error('Error connecting to voice channel:', error)
+        connection.destroy() // Cleanup
       })
 
-    this.player.play(resource)
+    // Listen for player events
+    player.on(AudioPlayerStatus.Playing, () => {
+      console.log('The audio is now playing!')
+    })
 
-    entersState(this.player, AudioPlayerStatus.Playing, 5e3)
+    player.on(AudioPlayerStatus.Idle, () => {
+      console.log('The audio has finished playing!')
+    })
 
-    connection.subscribe(this.player)
+    player.on('error', (error) => {
+      console.error('Error:', error.message)
+    })
   }
 }
 

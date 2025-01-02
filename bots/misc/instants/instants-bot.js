@@ -52,29 +52,38 @@ class InstantsBot extends AudioBot {
 
     const pattern = /onclick="play\('(.*?)'\)"/g
     const results = body.match(pattern)
-    console.log(results)
     this.formatUrl(message, results)
+    super.setNickname(message, 'My instants')
   }
 
-  formatUrl (message, instant) {
-    if (instant === null) {
-      return
+ formatUrl(message, instant) {
+    if (instant === null || !Array.isArray(instant) || instant.length === 0) {
+      return;
     }
-
-    console.log(instant)
-
-    let pattern = /onclick="play\('/
-    let name = instant[0].replace(pattern)
-    pattern = /'\)"/
-    // There is a better way to handle that. I need better reg exp
-    name = name.replace(pattern)
-    name = name.replace('undefined')
-    name = name.replace('undefined', '')
-    name = name.replace('undefined', '')
-
-    const url = 'https://www.myinstants.com' + name
-
-    super.sendVoiceMessage(message, url)
+  
+    console.log(instant);
+  
+    // Updated regex to specifically check for 'onclick="play(' and capture the URL part
+    let regex = /onclick="play\('([^']+)'/;
+  
+    // Loop through the array and check each string
+    for (let i = 0; i < instant.length; i++) {
+      let str = instant[i];
+  
+      // Try to find a match for the regex in the current string
+      let match = str.match(regex);
+  
+      // If a match is found, process and return the URL
+      if (match && match[1]) {
+        const url = 'https://www.myinstants.com' + match[1];
+        console.log("Formatted URL:", url);
+        super.sendVoiceMessage(message, url);
+        return; // Exit after the first match
+      }
+    }
+  
+    // If no match is found in any string
+    console.log("No match found in any of the instant strings.");
   }
 }
 

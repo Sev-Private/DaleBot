@@ -3,7 +3,7 @@ const Bot = require('../../default-bots/bot.js')
 class WorldCupCounterBot extends Bot {
   constructor (client) {
     super(client, 'diaspracopa')
-    this.startDate = new Date('11/21/2022')
+    this.startDate = new Date('11/06/2026')
   }
 
   handleMessage (message, args) {
@@ -13,7 +13,9 @@ class WorldCupCounterBot extends Bot {
 
     const newMessage = 'Faltam ' + days + ' dias para a copa do mundo!'
 
-    message.channel.send(newMessage)
+
+    super.setNickname(message, 'Dias para copa')
+    super.sendTextMessage(message, newMessage)
   }
 }
 

@@ -13,13 +13,15 @@
   "author": "objectivesev",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.8.0",
+    "@distube/ytdl-core": "^4.15.8",
     "discord.js": "^13.6.0",
     "dotenv": "^16.0.0",
     "ffmpeg-static": "^4.4.1",
     "pg": "^8.7.3",
     "request": "^2.88.2",
-    "ytdl-core": "^4.11.5"
+    "ytdl-core": "npm:@distube/ytdl-core@^4.15.8"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
