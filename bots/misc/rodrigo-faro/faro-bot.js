@@ -200,7 +200,7 @@ class FaroBot extends AudioBot {
   handleMessage (message, args) {
     const command = args[0]
 
-    if (command === null) {
+    if (command == null) {
       console.log('Xiiiiii é brincadeira')
       super.sendTextMessage(message, 'Deu erro no comando doidão')
       this.ajuda(message)

@@ -9,6 +9,7 @@ const {
 } = require('@discordjs/voice')
 const Bot = require('./bot.js')
 const ytdl = require('ytdl-core')
+const fs = require('fs');
 
 class AudioBot extends Bot {
   constructor (client, command) {
@@ -26,7 +27,10 @@ class AudioBot extends Bot {
     entersState(connection, VoiceConnectionStatus.Ready, 30e3)
 
     if (url.includes('youtube.com')) {
-      url = ytdl(url)
+      // url = ytdl(url)
+      ytdl('https://www.youtube.com/watch?v=EnLNDuKya04', { filter: 'audioonly' })
+      .pipe(fs.createWriteStream('audio.mp3'))
+      .on('error', console.error);
     }
 
     console.log(url)
