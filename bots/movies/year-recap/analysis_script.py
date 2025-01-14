@@ -35,7 +35,9 @@ def initialize_config_and_return_arguments():
 
     load_dotenv()
 
-    requests_cache.install_cache("api_cache", expire_after=43200)
+    requests_cache.install_cache(
+        "api_cache",
+          expire_after=3600)
 
     return args.year, args.generate_slide
 
