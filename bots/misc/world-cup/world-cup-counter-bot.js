@@ -13,7 +13,6 @@ class WorldCupCounterBot extends Bot {
 
     const newMessage = 'Faltam ' + days + ' dias para a copa do mundo!'
 
-
     super.setNickname(message, 'Dias para copa')
     super.sendTextMessage(message, newMessage)
   }

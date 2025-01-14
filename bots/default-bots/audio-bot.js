@@ -3,13 +3,11 @@ const {
   entersState,
   createAudioPlayer,
   createAudioResource,
-  StreamType,
   AudioPlayerStatus,
   VoiceConnectionStatus
 } = require('@discordjs/voice')
 const Bot = require('./bot.js')
 const ytdl = require('@distube/ytdl-core')
-const fs = require('fs')
 
 class AudioBot extends Bot {
   constructor (client, command) {
@@ -17,10 +15,9 @@ class AudioBot extends Bot {
     this.player = createAudioPlayer()
   }
 
-  sendVoiceMessage(message, url) {
-    
+  sendVoiceMessage (message, url) {
     if (message.member.voice.channel == null) {
-      this.sendTextMessage(message, "Conecta num canal de audio primeiro doidão")
+      this.sendTextMessage(message, 'Conecta num canal de audio primeiro doidão')
       return
     }
 
@@ -37,7 +34,7 @@ class AudioBot extends Bot {
         dlChunkSize: 0 // Stream directly without chunking
       })
     }
-    
+
     const audioResource = createAudioResource(url, { inlineVolume: true })
 
     const player = createAudioPlayer()
